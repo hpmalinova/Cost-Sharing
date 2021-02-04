@@ -2,7 +2,6 @@ package storage
 
 import (
 	"errors"
-	"fmt"
 )
 
 type Username string
@@ -30,11 +29,10 @@ func (u *Users) Create(username Username, password string) error {
 	return nil
 }
 
-func (u *Users) String() { // ?
+func (u *Users) GetUsernames() []Username {
+	usernames := make([]Username, 0, len(u.Users))
 	for _, user := range u.Users {
-		fmt.Println(user.Username, " ")
+		usernames = append(usernames, user.Username)
 	}
-	fmt.Println()
+	return usernames
 }
-
-// TODO showAllUsers (only usernames)
