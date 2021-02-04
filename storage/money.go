@@ -10,24 +10,31 @@ func (m *MoneyExchange) AddUser(username Username) {
 	m.Lends[username] = To{To: map[Username]Debt{}}
 }
 
-func (m *MoneyExchange) AddDebt(owes Username, lends Username, amount int, reason string) { // "owes" has to give "lends" 20lv
-	if debt, ok := m.Owes[owes].To[lends]; ok {
-		newAmount := debt.Amount + amount
-		newReason := debt.Reason + ", " + reason
-		m.Owes[owes].To[lends] = Debt{newAmount, newReason}
-	} else {
-		m.Owes[owes].To[lends] = Debt{Amount: amount, Reason: reason}
-	}
-	if debt, ok := m.Lends[lends].To[owes]; ok {
-		newAmount := debt.Amount + amount
-		m.Lends[lends].To[owes] = Debt{newAmount, reason}
-	} else {
-		m.Lends[lends].To[owes] = Debt{Amount: amount, Reason: reason}
+func (m *MoneyExchange) AddDebt(debtor, creditor Username, amount int, reason string) { // "debtor" has to give "creditor" 20lv
+	// Check if creditor owes something to debtor (In the past)
+	if debt, ok := m.Owes[creditor].To[debtor]; ok {
+		if debt.Amount > amount {
+			newAmount := debt.Amount - amount
+			m.Owes[creditor].To[debtor] = Debt{newAmount, debt.Reason}
+			m.Lends[debtor].To[creditor] = Debt{newAmount, debt.Reason}
+			return
+		} else if debt.Amount == amount {
+			delete(m.Owes[creditor].To, debtor)
+			delete(m.Lends[debtor].To, creditor)
+			return
+		} else {
+			amount -= debt.Amount
+		}
 	}
 
-	// синхронизирай двата мапа (добави в единия, извади от другия)
-	// трий при 0?
+	// Check if debtor already owes something to creditor
+	if debt, ok := m.Owes[debtor].To[creditor]; ok {
+		amount += debt.Amount
+		reason = debt.Reason + ", " + reason
+	}
 
+	m.Owes[debtor].To[creditor] = Debt{amount, reason}
+	m.Lends[creditor].To[debtor] = Debt{amount, reason}
 }
 
 type To struct {
@@ -36,5 +43,5 @@ type To struct {
 
 type Debt struct {
 	Amount int
-	Reason string // TODO predefined reasons?
+	Reason string
 }
