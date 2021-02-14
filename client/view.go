@@ -62,7 +62,8 @@ func (c *Client) Welcome() {
 
 		switch action {
 		case "add_friend":
-			break
+			friend := GetUserInput("Friend`s name> ")
+			c.AddFriend(friend)
 		case "create_group":
 			break
 		case "show_users":
@@ -82,3 +83,5 @@ func (c *Client) Welcome() {
 		}
 	}
 }
+
+//

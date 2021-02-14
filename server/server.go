@@ -3,6 +3,7 @@ package server
 import (
 	"Cost-Sharing/storage"
 	"encoding/json"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"golang.org/x/crypto/bcrypt"
@@ -89,6 +90,20 @@ func CheckPasswordHash(password, hash string) bool {
 func (a *App) ShowUsers(res http.ResponseWriter, req *http.Request) {
 	marshal, _ := json.Marshal(a.Users.GetUsernames())
 	_, _ = res.Write(marshal)
+}
+
+func (a *App) AddFriend(res http.ResponseWriter, req *http.Request) {
+	fmt.Println("req", req)
+	//a.Friends.Add()
+	//username, password, _ := req.BasicAuth()
+
+	//err := a.Users.Create(storage.Username(username), password)
+	//if err != nil {
+	//	http.Error(res, err.Error(), http.StatusInternalServerError)
+	//	return
+	//}
+	//
+	//res.WriteHeader(http.StatusCreated)
 }
 
 func (a *App) AddDebt(res http.ResponseWriter, req *http.Request) {

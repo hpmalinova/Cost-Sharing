@@ -2,9 +2,11 @@ package main
 
 import (
 	"Cost-Sharing/storage"
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 
 	//"golang.org/x/crypto/ssh/terminal"
 	//_ "golang.org/x/crypto/ssh/terminal"
@@ -42,7 +44,7 @@ func (c *Client) CreateUser() error {
 		return errors.New("oops, we couldn't process that") // todo
 	}
 
-	if res.StatusCode != 201 {
+	if res.StatusCode != http.StatusCreated {
 		b, _ := ioutil.ReadAll(res.Body)
 		return errors.New(string(b))
 	}
@@ -60,9 +62,39 @@ func (c *Client) ShowUsers() {
 	fmt.Println("All users: ", u)
 }
 
+func (c *Client) AddFriend(friend string) error {
+
+	reqBody, err := json.Marshal(map[string]string {
+		"friend": friend,
+	})
+	if err != nil {
+		log.Println(err)
+		return err // TODO
+	}
+
+	req, _ := http.NewRequest("POST", "http://localhost:8080/costSharing/home/addFriend", bytes.NewBuffer(reqBody))
+	req.Header.Set("Content-type", "application/json")
+	res, err := c.Do(req)
+	if err != nil {
+		log.Println(err)
+		return errors.New("oops, we couldn't process that") // todo
+	}
+
+	if res.StatusCode != http.StatusCreated {
+		b, _ := ioutil.ReadAll(res.Body)
+		return errors.New(string(b))
+	}
+	return nil
+}
+
+
 func main() {
 	var c Client
 	c.username = "p"
+	c.password = "1"
+	c.CreateUser()
+
+	c.username = "o"
 	c.password = "1"
 	c.CreateUser()
 

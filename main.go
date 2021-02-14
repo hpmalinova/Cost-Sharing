@@ -16,6 +16,7 @@ func main() {
 	//app.Server.Router.HandleFunc("/costSharing/home", app.Welcome).Methods("POST")
 
 	app.Server.Router.HandleFunc("/costSharing/home/allUsers", server.Notify(&app, app.ShowUsers)).Methods("GET")
+	app.Server.Router.HandleFunc("/costSharing/home/addFriend", server.Notify(&app, app.AddFriend)).Methods("Post")
 
 	_ = http.ListenAndServe(":8080", app.Server.Router)
 }
