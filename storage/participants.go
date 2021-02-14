@@ -20,12 +20,12 @@ func (p *Participants) HasParticipant(groupID uuid.UUID, user Username) bool {
 	return ok
 }
 
-func (p *Participants) GetParticipants (groupID uuid.UUID) []Username {
+func (p *Participants) GetParticipants(groupID uuid.UUID) []Username {
 	m := p.Participants[groupID] // m is map[Username]struct{}
 
 	usernames := make([]Username, len(m))
-	i:=0
-	for k := range m{
+	i := 0
+	for k := range m {
 		usernames[i] = k
 		i++
 	}
