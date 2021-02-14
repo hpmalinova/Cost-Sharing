@@ -56,17 +56,6 @@ func Notify(a *App, f http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func (a *App) CheckPassword(username, password string) bool {
-	realPassword := a.Users.GetPassword(storage.Username(username))
-	return CheckPasswordHash(password, realPassword)
-}
-
-
-func CheckPasswordHash(password, hash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	return err == nil
-}
-
 func (a *App) CreateUser(res http.ResponseWriter, req *http.Request) {
 	username, password, _ := req.BasicAuth()
 
@@ -78,6 +67,25 @@ func (a *App) CreateUser(res http.ResponseWriter, req *http.Request) {
 
 	res.WriteHeader(http.StatusCreated)
 }
+
+func (a *App) Login (res http.ResponseWriter, req *http.Request) {
+	username, password, _ := req.BasicAuth()
+	err := a.Users.CheckCredentials(storage.Username(username), password)
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusUnauthorized)
+	}
+}
+
+func (a *App) CheckPassword(username, password string) bool {
+	realPassword := a.Users.GetPassword(storage.Username(username))
+	return CheckPasswordHash(password, realPassword)
+}
+
+func CheckPasswordHash(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
+}
+
 
 func (a *App) ShowUsers(res http.ResponseWriter, req *http.Request) {
 	marshal, _ := json.Marshal(a.Users.GetUsernames())

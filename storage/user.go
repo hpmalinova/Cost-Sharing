@@ -3,7 +3,6 @@ package storage
 import (
 	"errors"
 	"golang.org/x/crypto/bcrypt"
-	"log"
 )
 
 type Username string
@@ -39,15 +38,29 @@ func (u *Users) Create(username Username, password string) error {
 
 	password, err := HashPassword(password)
 	if err != nil {
-		log.Println(err)
 		return errors.New("an error has occurred while creating user")
 	}
+
 	newUser := User{
 		Username: username,
 		Password: password,
 	}
+
 	u.Users[username] = newUser
 	return nil
+}
+
+func (u *Users) CheckCredentials(username Username, password string) error {
+	if user, ok := u.Users[username]; ok {
+		ok := CheckPasswordHash(password, user.Password)
+		if !ok {
+			return errors.New("invalid username or password")
+		} else {
+			return nil
+		}
+	} else {
+		return errors.New("invalid username or password")
+	}
 }
 
 func (u *Users) GetUsernames() []Username {
