@@ -68,7 +68,7 @@ func (a *App) CreateUser(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusCreated)
 }
 
-func (a *App) Login (res http.ResponseWriter, req *http.Request) {
+func (a *App) Login(res http.ResponseWriter, req *http.Request) {
 	username, password, _ := req.BasicAuth()
 	err := a.Users.CheckCredentials(storage.Username(username), password)
 	if err != nil {
@@ -85,7 +85,6 @@ func CheckPasswordHash(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil
 }
-
 
 func (a *App) ShowUsers(res http.ResponseWriter, req *http.Request) {
 	marshal, _ := json.Marshal(a.Users.GetUsernames())
