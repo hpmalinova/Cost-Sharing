@@ -136,24 +136,25 @@ func (c *Client) ShowGroups() []string {
 	return g
 }
 
-func (c *Client) AddDebtToFriend(friend string, amount int, reason string) error {
+func (c *Client) AddDebtToFriend(friend string, amount int, reason string, creditor bool) error {
 	reqBody, err := json.Marshal(map[string]interface{}{
-		"friend": friend,
-		"amount": amount,
-		"reason": reason,
+		"friend":   friend,
+		"amount":   amount,
+		"reason":   reason,
+		"creditor": creditor,
 	})
 	if err != nil {
 		log.Println(err)
 		return err // TODO
 	}
 
-	req, _ := http.NewRequest("POST", "http://localhost:8080/costSharing/home/split", bytes.NewBuffer(reqBody))
+	req, _ := http.NewRequest("POST", "http://localhost:8080/costSharing/home/addDebt ", bytes.NewBuffer(reqBody))
 	req.Header.Set("Content-type", "application/json")
 	req.SetBasicAuth(c.username, c.password)
 	res, err := c.Do(req)
 	if err != nil {
 		log.Println(err)
-		return errors.New("oops, we couldn't process that") // todo
+		return errors.New("oops, we could not process that") // todo
 	}
 
 	if res.StatusCode != http.StatusCreated {
@@ -174,7 +175,34 @@ func (c *Client) AddDebtToGroup(group string, amount int, reason string) error {
 		return err // TODO
 	}
 
-	req, _ := http.NewRequest("POST", "http://localhost:8080/costSharing/home/split", bytes.NewBuffer(reqBody))
+	req, _ := http.NewRequest("POST", "http://localhost:8080/costSharing/home/addDebtGroup", bytes.NewBuffer(reqBody))
+	req.Header.Set("Content-type", "application/json")
+	req.SetBasicAuth(c.username, c.password)
+	res, err := c.Do(req)
+	if err != nil {
+		log.Println(err)
+		return errors.New("oops, we couldn't process that") // todo
+	}
+
+	if res.StatusCode != http.StatusCreated {
+		b, _ := ioutil.ReadAll(res.Body)
+		return errors.New(string(b))
+	}
+	return nil
+}
+
+func (c *Client) ReturnDebt(friend string, amount int, groupName string) error {
+	reqBody, err := json.Marshal(map[string]interface{}{
+		"friend":    friend,
+		"amount":    amount,
+		"groupName": groupName,
+	})
+	if err != nil {
+		log.Println(err)
+		return err // TODO
+	}
+
+	req, _ := http.NewRequest("POST", "http://localhost:8080/costSharing/home/returnDebt", bytes.NewBuffer(reqBody))
 	req.Header.Set("Content-type", "application/json")
 	req.SetBasicAuth(c.username, c.password)
 	res, err := c.Do(req)

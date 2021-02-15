@@ -61,6 +61,12 @@ func (g *Groups) AddDebt(creditor string, groupID uuid.UUID, participants []stri
 	}
 }
 
+func (g *Groups) ReturnDebt(debtor string, groupID uuid.UUID, creditor string, amount int) {
+	moneyEx := g.Groups[groupID].MoneyExchange // TODO
+
+	moneyEx.AddDebt(debtor, creditor, amount, "")
+}
+
 func (g *Groups) FindGroupID(groupName string, participatesIn []uuid.UUID) (uuid.UUID, error) {
 	for _, groupID := range participatesIn {
 		if g.GetName(groupID) == groupName {
@@ -70,12 +76,3 @@ func (g *Groups) FindGroupID(groupName string, participatesIn []uuid.UUID) (uuid
 	msg := "you don`t participate in group called " + groupName
 	return uuid.Nil, errors.New(msg)
 }
-
-// TODO
-// create group // TODO Now only unique group names per person
-// show group(username)
-// show participants(groupid)
-// add debt(id, amount, reason)
-// add person to group/ remove person from group?
-// leave group - you cant leave the group, you owe money to ***
-// kick person? (group owner/admin)

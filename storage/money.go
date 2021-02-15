@@ -31,7 +31,11 @@ func (m *MoneyExchange) AddDebt(debtor, creditor string, amount int, reason stri
 	// Check if debtor already owes something to creditor
 	if debt, ok := m.Owes[debtor].To[creditor]; ok {
 		amount += debt.Amount
-		reason = debt.Reason + ", " + reason
+		if reason != "" {
+			reason = debt.Reason + ", " + reason
+		} else {
+			reason = debt.Reason
+		}
 	}
 
 	m.Owes[debtor].To[creditor] = Debt{amount, reason}

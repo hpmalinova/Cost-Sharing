@@ -26,11 +26,14 @@ func main() {
 	app.Server.Router.HandleFunc("/costSharing/home/showGroups", server.Notify(&app, app.ShowGroups)).Methods("GET")
 
 	// # Debt
-	app.Server.Router.HandleFunc("/costSharing/home/split", server.Notify(&app, app.AddDebtToFriend)).Methods("POST")
-	app.Server.Router.HandleFunc("/costSharing/home/split_group", server.Notify(&app, app.AddDebtToGroup)).Methods("POST")
+	// ## To friends
+	app.Server.Router.HandleFunc("/costSharing/home/addDebt", server.Notify(&app, app.AddDebtToFriend)).Methods("POST")
+	app.Server.Router.HandleFunc("/costSharing/home/owe", server.Notify(&app, app.ShowOwed)).Methods("GET")
+	app.Server.Router.HandleFunc("/costSharing/home/lend", server.Notify(&app, app.ShowLent)).Methods("GET")
 
-	app.Server.Router.HandleFunc("/costSharing/home/owe", server.Notify(&app, app.ShowOwe)).Methods("GET")
-	app.Server.Router.HandleFunc("/costSharing/home/lend", server.Notify(&app, app.AddDebtToGroup)).Methods("GET")
+	// ## To group
+	app.Server.Router.HandleFunc("/costSharing/home/addDebtGroup", server.Notify(&app, app.AddDebtToGroup)).Methods("POST")
+	app.Server.Router.HandleFunc("/costSharing/home/returnDebt", server.Notify(&app, app.ReturnDebt)).Methods("POST")
 
 	_ = http.ListenAndServe(":8080", app.Server.Router)
 }

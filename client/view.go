@@ -106,7 +106,7 @@ func (c *Client) Welcome() {
 			}
 			reason := GetUserInput("Reason for payment> ")
 			splitAmount := int(math.Ceil(float64(amount) / 2))
-			err = c.AddDebtToFriend(friend, splitAmount, reason)
+			err = c.AddDebtToFriend(friend, splitAmount, reason, true)
 			if err != nil {
 				fmt.Println(err.Error())
 			}
@@ -123,8 +123,34 @@ func (c *Client) Welcome() {
 			if err != nil {
 				fmt.Println(err.Error())
 			}
-		case "pay_back":
-			break
+		case "payed_back":
+			// <username> payed me back <amount> lv
+			friend := GetUserInput("Friend`s name> ")
+			textAmount := GetUserInput("Amount> ")
+			amount, err := strconv.Atoi(textAmount)
+			if err != nil || amount <= 0 {
+				fmt.Println("Amount should be a number, bigger than 1!")
+				continue
+			}
+			err = c.AddDebtToFriend(friend, amount, "", false)
+			if err != nil {
+				fmt.Println(err.Error())
+			}
+		case "pay_back_group":
+			// <username> payed me back <amount> lv for <groupName>
+			friend := GetUserInput("Friend`s name> ")
+			textAmount := GetUserInput("Amount> ")
+			groupName := GetUserInput("Group`s name> ")
+			amount, err := strconv.Atoi(textAmount)
+			if err != nil || amount <= 0 {
+				fmt.Println("Amount should be a number, bigger than 1!")
+				continue
+			}
+			// TODO
+			err = c.ReturnDebt(friend, amount, groupName)
+			if err != nil {
+				fmt.Println(err.Error())
+			}
 		case "owe":
 			o := c.ShowOwed()
 			printDebt(o, "You owe money to: ", "You don`t owe any money!")

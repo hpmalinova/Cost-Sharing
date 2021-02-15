@@ -192,6 +192,7 @@ func (a *App) AddDebtToFriend(res http.ResponseWriter, req *http.Request) {
 	friendName := data["friend"].(string)
 	amount := int(data["amount"].(float64)) // todo?
 	reason := data["reason"].(string)
+	creditor := data["creditor"].(bool)
 
 	if !a.Users.DoesExist(friendName) {
 		msg := friendName + " does not exist!"
@@ -199,7 +200,11 @@ func (a *App) AddDebtToFriend(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	a.Money.AddDebt(friendName, username, amount, reason)
+	if creditor {
+		a.Money.AddDebt(friendName, username, amount, reason)
+	} else {
+		a.Money.AddDebt(username, friendName, amount, reason)
+	}
 
 	res.WriteHeader(http.StatusCreated)
 }
@@ -240,6 +245,46 @@ func (a *App) AddDebtToGroup(res http.ResponseWriter, req *http.Request) {
 	participants := a.Participants.GetParticipants(groupID)
 
 	a.Groups.AddDebt(creditor, groupID, participants, amount, reason)
+
+	res.WriteHeader(http.StatusCreated)
+}
+
+func (a *App) ReturnDebt(res http.ResponseWriter, req *http.Request) {
+	headerContentType := req.Header.Get("Content-Type")
+	if headerContentType != "application/json" {
+		http.Error(res, "Content Type is not application/json", http.StatusUnsupportedMediaType)
+		return
+	}
+
+	debtor := req.Header.Get("Username")
+	body, _ := ioutil.ReadAll(req.Body)
+
+	var data map[string]interface{}
+	if err := json.Unmarshal(body, &data); err != nil {
+		http.Error(res, "Error in Unmarshal", http.StatusInternalServerError)
+		return
+	}
+
+	friend := data["friend"].(string)
+	amount := int(data["amount"].(float64)) // todo?
+	groupName := data["groupName"].(string)
+
+	groupIDs := a.Participates.GetGroups(debtor)
+
+	groupID, err := a.Groups.FindGroupID(groupName, groupIDs)
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Check if the given friend is in the same group
+	if !a.Participates.DoesParticipate(friend, groupID) {
+		msg := friend + " is not part of " + groupName
+		http.Error(res, msg, http.StatusBadRequest)
+		return
+	}
+
+	a.Groups.ReturnDebt(debtor, groupID, friend, amount)
 
 	res.WriteHeader(http.StatusCreated)
 }
