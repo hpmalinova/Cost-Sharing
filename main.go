@@ -25,7 +25,7 @@ func main() {
 
 	// # Groups
 	app.Server.Router.HandleFunc("/costSharing/home/createGroup", server.Notify(&app, app.CreateGroup)).Methods("POST")
-	//app.Server.Router.HandleFunc("/costSharing/home/showGroups", server.Notify(&app, app.ShowGroups)).Methods("GET")
+	app.Server.Router.HandleFunc("/costSharing/home/showGroups", server.Notify(&app, app.ShowGroups)).Methods("GET")
 
 	_ = http.ListenAndServe(":8080", app.Server.Router)
 }

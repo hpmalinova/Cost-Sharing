@@ -124,6 +124,18 @@ func (c *Client) CreateGroup(name string, participants []string) error {
 	return nil
 }
 
+func (c *Client) ShowGroups() []string {
+	req, _ := http.NewRequest("GET", "http://localhost:8080/costSharing/home/showGroups", nil)
+	req.SetBasicAuth(c.username, c.password)
+	res, _ := c.Do(req)
+
+	var g []string
+	body, _ := ioutil.ReadAll(res.Body)
+	_ = json.Unmarshal(body, &g)
+
+	return g
+}
+
 func main() {
 	var c Client
 	c.username = "p"
@@ -131,6 +143,10 @@ func main() {
 	c.CreateUser()
 
 	c.username = "o"
+	c.password = "1"
+	c.CreateUser()
+
+	c.username = "r"
 	c.password = "1"
 	c.CreateUser()
 

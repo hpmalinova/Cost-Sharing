@@ -6,7 +6,7 @@ import (
 )
 
 type User struct {
-	Username string   `json:"username"`
+	Username string `json:"username"`
 	Password string `json:"password"`
 }
 
@@ -40,7 +40,7 @@ func (u *Users) Create(username string, password string) error {
 	}
 
 	newUser := User{
-		Username:   username,
+		Username: username,
 		Password: password,
 	}
 

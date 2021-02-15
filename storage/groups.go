@@ -12,12 +12,15 @@ type Group struct {
 	MoneyExchange
 }
 
-func (g *Groups) CreateGroup(groupName string, participants []string) {
+func (g *Groups) CreateGroup(groupName string, participants []string) uuid.UUID {
 	// TODO check if group is taken?
 	newID := uuid.New()
 	g.Groups[newID] = Group{
-		Name:          groupName,
-		MoneyExchange: MoneyExchange{},
+		Name: groupName,
+		MoneyExchange: MoneyExchange{
+			Owes:  map[string]To{},
+			Lends: map[string]To{},
+		},
 	}
 
 	m := g.Groups[newID].MoneyExchange
@@ -25,6 +28,8 @@ func (g *Groups) CreateGroup(groupName string, participants []string) {
 	for _, username := range participants {
 		m.AddUser(username)
 	}
+
+	return newID
 }
 
 func (g *Groups) GetName(groupID uuid.UUID) string {

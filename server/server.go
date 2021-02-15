@@ -100,7 +100,7 @@ func (a *App) AddFriend(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	username := req.Header.Get("string")
+	username := req.Header.Get("Username")
 	body, _ := ioutil.ReadAll(req.Body)
 
 	var data map[string]string
@@ -118,7 +118,7 @@ func (a *App) AddFriend(res http.ResponseWriter, req *http.Request) {
 }
 
 func (a *App) ShowFriends(res http.ResponseWriter, req *http.Request) {
-	username := req.Header.Get("string")
+	username := req.Header.Get("Username")
 	friends := a.Friends.GetFriendsOf(username)
 	marshal, _ := json.Marshal(friends)
 	_, _ = res.Write(marshal)
@@ -166,7 +166,7 @@ func (a *App) CreateGroup(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	username := req.Header.Get("string")
+	username := req.Header.Get("Username")
 	body, _ := ioutil.ReadAll(req.Body)
 
 	var data map[string]interface{}
@@ -176,12 +176,31 @@ func (a *App) CreateGroup(res http.ResponseWriter, req *http.Request) {
 	}
 
 	groupName := data["name"].(string)
-	participants := data["participants"].([]string)
+	participantsInt := data["participants"].([]interface{})
+	participants := make([]string, len(participantsInt))
+	for i, _ := range participantsInt {
+		participants[i] = participantsInt[i].(string)
+	}
 
 	participants = append(participants, username)
 
-	a.Groups.CreateGroup(groupName, participants)
-	//a.Participants.Add()
+	groupID := a.Groups.CreateGroup(groupName, participants)
+
+	a.Participants.Add(groupID, participants)
+
+	for _, username := range participants {
+		a.Participates.Add(username, groupID)
+	}
 
 	res.WriteHeader(http.StatusCreated)
+}
+
+func (a *App) ShowGroups(res http.ResponseWriter, req *http.Request) {
+	username := req.Header.Get("Username")
+
+	groupIDs := a.Participates.GetGroups(username)
+	groupNames := a.Groups.GetGroupNames(groupIDs)
+
+	marshal, _ := json.Marshal(groupNames)
+	_, _ = res.Write(marshal)
 }

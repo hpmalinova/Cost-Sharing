@@ -41,7 +41,7 @@ func (c *Client) LoginOrCreate() error {
 }
 
 func (c *Client) AddCredentials() {
-	c.username = GetUserInput("string> ")
+	c.username = GetUserInput("Username> ")
 	c.password = GetUserInput("Password> ")
 }
 
@@ -72,7 +72,7 @@ func (c *Client) Welcome() {
 			}
 		case "show_friends":
 			friends := c.ShowFriends()
-			printFriends(friends)
+			printData(friends, "Friends: ", "You have no friends!")
 		case "create_group":
 			groupName := GetUserInput("Group`s name> ")
 
@@ -91,7 +91,10 @@ func (c *Client) Welcome() {
 
 		case "show_users":
 			users := c.ShowUsers()
-			printUsers(users)
+			printData(users, "Users: ", "There are no users!")
+		case "show_groups":
+			groups := c.ShowGroups()
+			printData(groups, "You participate in: ", "You don`t participate in any group!")
 		case "owe":
 			break
 		case "lend":
@@ -108,20 +111,11 @@ func (c *Client) Welcome() {
 	}
 }
 
-func printFriends(friends []string) {
-	if len(friends) > 0 {
-		fmt.Println("Friends:")
-		fmt.Println(strings.Join(friends, ", "))
+func printData(data []string, title, emptyMsg string) {
+	if len(data) > 0 {
+		fmt.Println(title)
+		fmt.Println(strings.Join(data, ", "))
 	} else {
-		fmt.Println("You have no friends.")
-	}
-}
-
-func printUsers(users []string) {
-	if len(users) > 0 {
-		fmt.Println("Users:")
-		fmt.Println(strings.Join(users, ", "))
-	} else {
-		fmt.Println("There are no users.")
+		fmt.Println(emptyMsg)
 	}
 }
