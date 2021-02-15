@@ -3,10 +3,10 @@ package server
 import (
 	"Cost-Sharing/storage"
 	"encoding/json"
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"golang.org/x/crypto/bcrypt"
+	"io/ioutil"
 	"math"
 	"net/http"
 )
@@ -50,8 +50,9 @@ func Notify(a *App, f http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		username, password, ok := r.BasicAuth()
 		if !ok || !a.CheckPassword(username, password) {
-			w.WriteHeader(401)
+			w.WriteHeader(http.StatusUnauthorized)
 		} else {
+			r.Header.Set("Username", username)
 			f(w, r)
 		}
 	}
@@ -93,17 +94,34 @@ func (a *App) ShowUsers(res http.ResponseWriter, req *http.Request) {
 }
 
 func (a *App) AddFriend(res http.ResponseWriter, req *http.Request) {
-	fmt.Println("req", req)
-	//a.Friends.Add()
-	//username, password, _ := req.BasicAuth()
+	headerContentType := req.Header.Get("Content-Type")
+	if headerContentType != "application/json" {
+		http.Error(res, "Content Type is not application/json", http.StatusUnsupportedMediaType)
+		return
+	}
 
-	//err := a.Users.Create(storage.Username(username), password)
-	//if err != nil {
-	//	http.Error(res, err.Error(), http.StatusInternalServerError)
-	//	return
-	//}
-	//
-	//res.WriteHeader(http.StatusCreated)
+	username := req.Header.Get("Username")
+	body, _ := ioutil.ReadAll(req.Body)
+
+	var data map[string]string
+	if err := json.Unmarshal(body, &data); err != nil {
+		http.Error(res, "Error in Unmarshal", http.StatusInternalServerError)
+		return
+	}
+
+	err := a.Friends.Add(storage.Username(username), storage.Username(data["friend"]))
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusBadRequest)
+		return
+	}
+	res.WriteHeader(http.StatusCreated)
+}
+
+func (a *App) ShowFriends(res http.ResponseWriter, req *http.Request) {
+	username := req.Header.Get("Username")
+	friends := a.Friends.GetFriendsOf(storage.Username(username))
+	marshal, _ := json.Marshal(friends)
+	_, _ = res.Write(marshal)
 }
 
 func (a *App) AddDebt(res http.ResponseWriter, req *http.Request) {

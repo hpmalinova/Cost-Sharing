@@ -63,11 +63,21 @@ func (c *Client) Welcome() {
 		switch action {
 		case "add_friend":
 			friend := GetUserInput("Friend`s name> ")
-			c.AddFriend(friend)
+			err := c.AddFriend(friend)
+			if err != nil {
+				fmt.Println(err)
+			} else {
+				msg := "Congrats, you and " + friend + "are now friends!"
+				fmt.Println(msg)
+			}
+		case "show_friends":
+			friends := c.ShowFriends()
+			printFriends(friends)
 		case "create_group":
 			break
 		case "show_users":
-			c.ShowUsers()
+			users := c.ShowUsers()
+			printUsers(users)
 		case "owe":
 			break
 		case "lend":
@@ -84,4 +94,20 @@ func (c *Client) Welcome() {
 	}
 }
 
-//
+func printFriends(friends []string) {
+	if len(friends) > 0 {
+		fmt.Println("Friends:")
+		fmt.Println(strings.Join(friends, ", "))
+	} else {
+		fmt.Println("You have no friends.")
+	}
+}
+
+func printUsers(users []string) {
+	if len(users) > 0 {
+		fmt.Println("Users:")
+		fmt.Println(strings.Join(users, ", "))
+	} else {
+		fmt.Println("There are no users.")
+	}
+}

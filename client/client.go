@@ -1,11 +1,9 @@
 package main
 
 import (
-	"Cost-Sharing/storage"
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 
 	//"golang.org/x/crypto/ssh/terminal"
@@ -51,20 +49,18 @@ func (c *Client) CreateUser() error {
 	return nil
 }
 
-func (c *Client) ShowUsers() {
-	req, _ := http.NewRequest("GET", "http://localhost:8080/costSharing/home/allUsers", nil)
+func (c *Client) ShowUsers() []string {
+	req, _ := http.NewRequest("GET", "http://localhost:8080/costSharing/home/showUsers", nil)
 	req.SetBasicAuth(c.username, c.password)
 	res, _ := c.Do(req)
-	var u []storage.Username
+	var u []string
 	body, _ := ioutil.ReadAll(res.Body)
 	_ = json.Unmarshal(body, &u)
-
-	fmt.Println("All users: ", u)
+	return u
 }
 
 func (c *Client) AddFriend(friend string) error {
-
-	reqBody, err := json.Marshal(map[string]string {
+	reqBody, err := json.Marshal(map[string]string{
 		"friend": friend,
 	})
 	if err != nil {
@@ -74,6 +70,7 @@ func (c *Client) AddFriend(friend string) error {
 
 	req, _ := http.NewRequest("POST", "http://localhost:8080/costSharing/home/addFriend", bytes.NewBuffer(reqBody))
 	req.Header.Set("Content-type", "application/json")
+	req.SetBasicAuth(c.username, c.password)
 	res, err := c.Do(req)
 	if err != nil {
 		log.Println(err)
@@ -87,6 +84,18 @@ func (c *Client) AddFriend(friend string) error {
 	return nil
 }
 
+func (c *Client) ShowFriends() []string {
+	req, _ := http.NewRequest("GET", "http://localhost:8080/costSharing/home/showFriends", nil)
+	req.SetBasicAuth(c.username, c.password)
+	res, _ := c.Do(req)
+
+	var u []string
+	body, _ := ioutil.ReadAll(res.Body)
+	_ = json.Unmarshal(body, &u)
+
+	return u
+	//fmt.Println("All friends: ", u)
+}
 
 func main() {
 	var c Client

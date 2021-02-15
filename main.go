@@ -15,8 +15,9 @@ func main() {
 
 	//app.Server.Router.HandleFunc("/costSharing/home", app.Welcome).Methods("POST")
 
-	app.Server.Router.HandleFunc("/costSharing/home/allUsers", server.Notify(&app, app.ShowUsers)).Methods("GET")
-	app.Server.Router.HandleFunc("/costSharing/home/addFriend", server.Notify(&app, app.AddFriend)).Methods("Post")
+	app.Server.Router.HandleFunc("/costSharing/home/showUsers", server.Notify(&app, app.ShowUsers)).Methods("GET") // todo show users
+	app.Server.Router.HandleFunc("/costSharing/home/addFriend", server.Notify(&app, app.AddFriend)).Methods("POST")
+	app.Server.Router.HandleFunc("/costSharing/home/showFriends", server.Notify(&app, app.ShowFriends)).Methods("GET")
 
 	_ = http.ListenAndServe(":8080", app.Server.Router)
 }
