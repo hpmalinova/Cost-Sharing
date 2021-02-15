@@ -5,18 +5,16 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type Username string
-
 type User struct {
-	Username `json:"username"`
+	Username string   `json:"username"`
 	Password string `json:"password"`
 }
 
 type Users struct {
-	Users map[Username]User `json:"users"`
+	Users map[string]User `json:"users"`
 }
 
-func (u *Users) GetPassword(username Username) string {
+func (u *Users) GetPassword(username string) string {
 	return u.Users[username].Password
 }
 
@@ -30,7 +28,7 @@ func CheckPasswordHash(password, hash string) bool {
 	return err == nil
 }
 
-func (u *Users) Create(username Username, password string) error {
+func (u *Users) Create(username string, password string) error {
 	// Check if username already exists:
 	if _, ok := u.Users[username]; ok {
 		return errors.New("this username is already taken")
@@ -42,7 +40,7 @@ func (u *Users) Create(username Username, password string) error {
 	}
 
 	newUser := User{
-		Username: username,
+		Username:   username,
 		Password: password,
 	}
 
@@ -50,7 +48,7 @@ func (u *Users) Create(username Username, password string) error {
 	return nil
 }
 
-func (u *Users) CheckCredentials(username Username, password string) error {
+func (u *Users) CheckCredentials(username string, password string) error {
 	if user, ok := u.Users[username]; ok {
 		ok := CheckPasswordHash(password, user.Password)
 		if !ok {
@@ -66,7 +64,7 @@ func (u *Users) CheckCredentials(username Username, password string) error {
 func (u *Users) GetUsernames() []string {
 	usernames := make([]string, 0, len(u.Users))
 	for _, user := range u.Users {
-		usernames = append(usernames, string(user.Username))
+		usernames = append(usernames, user.Username)
 	}
 	return usernames
 }

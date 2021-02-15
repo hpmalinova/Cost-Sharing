@@ -12,18 +12,18 @@ type Group struct {
 	MoneyExchange
 }
 
-func (g *Groups) CreateGroup(name string, participants ...Username) {
+func (g *Groups) CreateGroup(groupName string, participants []string) {
+	// TODO check if group is taken?
 	newID := uuid.New()
 	g.Groups[newID] = Group{
-		Name:          name,
+		Name:          groupName,
 		MoneyExchange: MoneyExchange{},
 	}
 
-	//m := g.Groups[newID].MoneyExchange // TODO fix: add debt, add people to moneyExchange
 	m := g.Groups[newID].MoneyExchange
 
-	for _, user := range participants {
-		m.AddUser(user)
+	for _, username := range participants {
+		m.AddUser(username)
 	}
 }
 
@@ -35,7 +35,7 @@ func (g *Groups) GetGroup(groupID uuid.UUID) Group {
 	return g.Groups[groupID]
 }
 
-func (g *Groups) GetGroupNames(groupIDs ...uuid.UUID) []string {
+func (g *Groups) GetGroupNames(groupIDs []uuid.UUID) []string {
 	groupNames := make([]string, len(groupIDs))
 	for i, id := range groupIDs {
 		groupNames[i] = g.GetName(id)
@@ -44,7 +44,7 @@ func (g *Groups) GetGroupNames(groupIDs ...uuid.UUID) []string {
 	return groupNames
 }
 
-func (g *Groups) AddDebt(creditor Username, groupID uuid.UUID, participants []Username, amount int, reason string) {
+func (g *Groups) AddDebt(creditor string, groupID uuid.UUID, participants []string, amount int, reason string) {
 	moneyEx := g.Groups[groupID].MoneyExchange
 	for _, debtor := range participants {
 		if debtor != creditor {

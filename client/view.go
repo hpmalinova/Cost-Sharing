@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func (c *Client) Authenticate() {
+func (c *Client) Index() {
 	fmt.Println("Welcome to Cost-Sharing")
 	for {
 		err := c.LoginOrCreate()
@@ -41,7 +41,7 @@ func (c *Client) LoginOrCreate() error {
 }
 
 func (c *Client) AddCredentials() {
-	c.username = GetUserInput("Username> ")
+	c.username = GetUserInput("string> ")
 	c.password = GetUserInput("Password> ")
 }
 
@@ -74,7 +74,21 @@ func (c *Client) Welcome() {
 			friends := c.ShowFriends()
 			printFriends(friends)
 		case "create_group":
-			break
+			groupName := GetUserInput("Group`s name> ")
+
+			participants := strings.Split(GetUserInput("Participants (with `,`)> "), ",")
+			for i, _ := range participants {
+				participants[i] = strings.Trim(participants[i], " ")
+			}
+
+			err := c.CreateGroup(groupName, participants)
+			if err != nil {
+				fmt.Println(err)
+			} //} else {
+			//	msg := "Congrats, you and " + friend + "are now friends!"
+			//	fmt.Println(msg)
+			//}
+
 		case "show_users":
 			users := c.ShowUsers()
 			printUsers(users)

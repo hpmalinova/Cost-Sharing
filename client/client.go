@@ -97,6 +97,33 @@ func (c *Client) ShowFriends() []string {
 	//fmt.Println("All friends: ", u)
 }
 
+func (c *Client) CreateGroup(name string, participants []string) error {
+	reqBody, err := json.Marshal(map[string]interface{}{
+		"name":         name,
+		"participants": participants,
+	})
+
+	if err != nil {
+		log.Println(err)
+		return err // TODO
+	}
+
+	req, _ := http.NewRequest("POST", "http://localhost:8080/costSharing/home/createGroup", bytes.NewBuffer(reqBody))
+	req.Header.Set("Content-type", "application/json")
+	req.SetBasicAuth(c.username, c.password)
+	res, err := c.Do(req)
+	if err != nil {
+		log.Println(err)
+		return errors.New("oops, we couldn't process that") // todo
+	}
+
+	if res.StatusCode != http.StatusCreated {
+		b, _ := ioutil.ReadAll(res.Body)
+		return errors.New(string(b))
+	}
+	return nil
+}
+
 func main() {
 	var c Client
 	c.username = "p"
@@ -107,5 +134,5 @@ func main() {
 	c.password = "1"
 	c.CreateUser()
 
-	c.Authenticate()
+	c.Index()
 }

@@ -33,15 +33,15 @@ type App struct {
 
 func InitApp() App {
 	return App{
-		Users:   storage.Users{Users: map[storage.Username]storage.User{}},
-		Friends: storage.Friends{Friends: map[storage.Username]map[storage.Username]struct{}{}},
+		Users:   storage.Users{Users: map[string]storage.User{}},
+		Friends: storage.Friends{Friends: map[string]map[string]struct{}{}},
 		Money: storage.MoneyExchange{
-			Owes:  map[storage.Username]storage.To{},
-			Lends: map[storage.Username]storage.To{},
+			Owes:  map[string]storage.To{},
+			Lends: map[string]storage.To{},
 		},
 		Groups:       storage.Groups{Groups: map[uuid.UUID]storage.Group{}},
-		Participants: storage.Participants{Participants: map[uuid.UUID]map[storage.Username]struct{}{}},
-		Participates: storage.Participates{Participates: map[storage.Username]map[uuid.UUID]struct{}{}},
+		Participants: storage.Participants{Participants: map[uuid.UUID]map[string]struct{}{}},
+		Participates: storage.Participates{Participates: map[string]map[uuid.UUID]struct{}{}},
 		Server:       NewServer(),
 	}
 }
@@ -52,7 +52,7 @@ func Notify(a *App, f http.HandlerFunc) http.HandlerFunc {
 		if !ok || !a.CheckPassword(username, password) {
 			w.WriteHeader(http.StatusUnauthorized)
 		} else {
-			r.Header.Set("Username", username)
+			r.Header.Set("string", username)
 			f(w, r)
 		}
 	}
@@ -61,7 +61,7 @@ func Notify(a *App, f http.HandlerFunc) http.HandlerFunc {
 func (a *App) CreateUser(res http.ResponseWriter, req *http.Request) {
 	username, password, _ := req.BasicAuth()
 
-	err := a.Users.Create(storage.Username(username), password)
+	err := a.Users.Create(string(username), password)
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusInternalServerError)
 		return
@@ -72,14 +72,14 @@ func (a *App) CreateUser(res http.ResponseWriter, req *http.Request) {
 
 func (a *App) Login(res http.ResponseWriter, req *http.Request) {
 	username, password, _ := req.BasicAuth()
-	err := a.Users.CheckCredentials(storage.Username(username), password)
+	err := a.Users.CheckCredentials(username, password)
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusUnauthorized)
 	}
 }
 
 func (a *App) CheckPassword(username, password string) bool {
-	realPassword := a.Users.GetPassword(storage.Username(username))
+	realPassword := a.Users.GetPassword(username)
 	return CheckPasswordHash(password, realPassword)
 }
 
@@ -100,7 +100,7 @@ func (a *App) AddFriend(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	username := req.Header.Get("Username")
+	username := req.Header.Get("string")
 	body, _ := ioutil.ReadAll(req.Body)
 
 	var data map[string]string
@@ -109,7 +109,7 @@ func (a *App) AddFriend(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err := a.Friends.Add(storage.Username(username), storage.Username(data["friend"]))
+	err := a.Friends.Add(username, data["friend"])
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 		return
@@ -118,8 +118,8 @@ func (a *App) AddFriend(res http.ResponseWriter, req *http.Request) {
 }
 
 func (a *App) ShowFriends(res http.ResponseWriter, req *http.Request) {
-	username := req.Header.Get("Username")
-	friends := a.Friends.GetFriendsOf(storage.Username(username))
+	username := req.Header.Get("string")
+	friends := a.Friends.GetFriendsOf(username)
 	marshal, _ := json.Marshal(friends)
 	_, _ = res.Write(marshal)
 }
@@ -129,7 +129,7 @@ func (a *App) AddDebt(res http.ResponseWriter, req *http.Request) {
 	// Given: creditor, groupName, amount, reason
 	// TODO get from body
 	var (
-		creditor  storage.Username
+		creditor  string
 		groupName string
 		amount    int
 		reason    string
@@ -152,9 +152,36 @@ func (a *App) AddDebt(res http.ResponseWriter, req *http.Request) {
 	fAmount := math.Ceil(float64(amount) / float64(a.Participants.GetNumberOfParticipants(groupID)))
 	debt := int(fAmount)
 
-	// p.GetParticipants --> []Username
+	// p.GetParticipants --> []string
 	participants := a.Participants.GetParticipants(groupID)
 
 	// g.AddDebt(creditor, groupID, participants, individualAmount, reason)
 	a.Groups.AddDebt(creditor, groupID, participants, debt, reason)
+}
+
+func (a *App) CreateGroup(res http.ResponseWriter, req *http.Request) {
+	headerContentType := req.Header.Get("Content-Type")
+	if headerContentType != "application/json" {
+		http.Error(res, "Content Type is not application/json", http.StatusUnsupportedMediaType)
+		return
+	}
+
+	username := req.Header.Get("string")
+	body, _ := ioutil.ReadAll(req.Body)
+
+	var data map[string]interface{}
+	if err := json.Unmarshal(body, &data); err != nil {
+		http.Error(res, "Error in Unmarshal", http.StatusInternalServerError)
+		return
+	}
+
+	groupName := data["name"].(string)
+	participants := data["participants"].([]string)
+
+	participants = append(participants, username)
+
+	a.Groups.CreateGroup(groupName, participants)
+	//a.Participants.Add()
+
+	res.WriteHeader(http.StatusCreated)
 }

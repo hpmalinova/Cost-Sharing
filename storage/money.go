@@ -1,16 +1,16 @@
 package storage
 
 type MoneyExchange struct {
-	Owes  map[Username]To
-	Lends map[Username]To
+	Owes  map[string]To
+	Lends map[string]To
 }
 
-func (m *MoneyExchange) AddUser(username Username) {
-	m.Owes[username] = To{To: map[Username]Debt{}}
-	m.Lends[username] = To{To: map[Username]Debt{}}
+func (m *MoneyExchange) AddUser(username string) {
+	m.Owes[username] = To{To: map[string]Debt{}}
+	m.Lends[username] = To{To: map[string]Debt{}}
 }
 
-func (m *MoneyExchange) AddDebt(debtor, creditor Username, amount int, reason string) { // "debtor" has to give "creditor" 20lv
+func (m *MoneyExchange) AddDebt(debtor, creditor string, amount int, reason string) { // "debtor" has to give "creditor" 20lv
 	// Check if creditor owes something to debtor (In the past)
 	if debt, ok := m.Owes[creditor].To[debtor]; ok {
 		if debt.Amount > amount {
@@ -38,7 +38,7 @@ func (m *MoneyExchange) AddDebt(debtor, creditor Username, amount int, reason st
 }
 
 type To struct {
-	To map[Username]Debt
+	To map[string]Debt
 }
 
 type Debt struct {
