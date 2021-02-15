@@ -23,7 +23,7 @@ func (u *Users) Create(username string, password string) error {
 		return errors.New("this username is already taken")
 	}
 
-	password, err := HashPassword(password)
+	password, err := hashPassword(password)
 	if err != nil {
 		return errors.New("an error has occurred while creating user")
 	}
@@ -43,7 +43,7 @@ func (u *Users) GetPassword(username string) string {
 
 func (u *Users) CheckCredentials(username string, password string) error {
 	if user, ok := u.Users[username]; ok {
-		ok := CheckPasswordHash(password, user.Password)
+		ok := checkPasswordHash(password, user.Password)
 		if !ok {
 			return errors.New("invalid username or password")
 		} else {
@@ -71,12 +71,12 @@ func (u *Users) DoesExist(username string) bool {
 	return false
 }
 
-func HashPassword(password string) (string, error) {
+func hashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
 	return string(bytes), err
 }
 
-func CheckPasswordHash(password, hash string) bool {
+func checkPasswordHash(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil
 }
