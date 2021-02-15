@@ -2,6 +2,7 @@ package storage
 
 import (
 	"github.com/stretchr/testify/assert"
+	"sort"
 	"testing"
 )
 
@@ -32,6 +33,7 @@ func TestFriends_GetFriendsOf(t *testing.T) {
 		f := Friends{Friends: map[string]map[string]struct{}{"Pesho": {"Gosho": {}, "Maria": {}}}}
 		expected := []string{"Gosho", "Maria"}
 		actual := f.GetFriendsOf("Pesho")
+		sort.Strings(actual)
 		assert.Equal(t, expected, actual)
 	})
 	t.Run("when has no friends", func(t *testing.T) {
