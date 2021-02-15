@@ -63,10 +63,10 @@ func (u *Users) CheckCredentials(username Username, password string) error {
 	}
 }
 
-func (u *Users) GetUsernames() []Username {
-	usernames := make([]Username, 0, len(u.Users))
+func (u *Users) GetUsernames() []string {
+	usernames := make([]string, 0, len(u.Users))
 	for _, user := range u.Users {
-		usernames = append(usernames, user.Username)
+		usernames = append(usernames, string(user.Username))
 	}
 	return usernames
 }
