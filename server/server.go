@@ -93,6 +93,7 @@ func (a *App) ShowUsers(res http.ResponseWriter, req *http.Request) {
 	_, _ = res.Write(marshal)
 }
 
+// # Friends
 func (a *App) AddFriend(res http.ResponseWriter, req *http.Request) {
 	headerContentType := req.Header.Get("Content-Type")
 	if headerContentType != "application/json" {
@@ -124,41 +125,7 @@ func (a *App) ShowFriends(res http.ResponseWriter, req *http.Request) {
 	_, _ = res.Write(marshal)
 }
 
-func (a *App) AddDebt(res http.ResponseWriter, req *http.Request) {
-	// TODO where to put?
-	// Given: creditor, groupName, amount, reason
-	// TODO get from body
-	var (
-		creditor  string
-		groupName string
-		amount    int
-		reason    string
-	)
-
-	// p.GetGroups(creditor) --> groupIDs //a.Participates.GetGroups()
-	groupIDs := a.Participates.GetGroups(creditor)
-
-	// check for every groupID
-	//		if:	g.GetName(groupID) == groupName --> groupID
-	var groupID uuid.UUID
-
-	for _, id := range groupIDs {
-		if a.Groups.GetName(id) == groupName {
-			groupID = id
-		}
-	}
-
-	// individualAmount := amount / p.GetNumberOfParticipants(groupID) // TODO math.Ceil(x float64)--> float64
-	fAmount := math.Ceil(float64(amount) / float64(a.Participants.GetNumberOfParticipants(groupID)))
-	debt := int(fAmount)
-
-	// p.GetParticipants --> []string
-	participants := a.Participants.GetParticipants(groupID)
-
-	// g.AddDebt(creditor, groupID, participants, individualAmount, reason)
-	a.Groups.AddDebt(creditor, groupID, participants, debt, reason)
-}
-
+// # Groups
 func (a *App) CreateGroup(res http.ResponseWriter, req *http.Request) {
 	headerContentType := req.Header.Get("Content-Type")
 	if headerContentType != "application/json" {
@@ -203,4 +170,76 @@ func (a *App) ShowGroups(res http.ResponseWriter, req *http.Request) {
 
 	marshal, _ := json.Marshal(groupNames)
 	_, _ = res.Write(marshal)
+}
+
+// # Debts
+func (a *App) AddDebtToFriend(res http.ResponseWriter, req *http.Request) {
+	headerContentType := req.Header.Get("Content-Type")
+	if headerContentType != "application/json" {
+		http.Error(res, "Content Type is not application/json", http.StatusUnsupportedMediaType)
+		return
+	}
+
+	username := req.Header.Get("Username")
+	body, _ := ioutil.ReadAll(req.Body)
+
+	var data map[string]interface{}
+	if err := json.Unmarshal(body, &data); err != nil {
+		http.Error(res, "Error in Unmarshal", http.StatusInternalServerError)
+		return
+	}
+
+	friendName := data["friend"].(string)
+	amount := int(data["amount"].(float64)) // todo?
+	reason := data["reason"].(string)
+
+	if !a.Users.DoesExist(friendName) {
+		msg := friendName + " does not exist!"
+		http.Error(res, msg, http.StatusBadRequest)
+		return
+	}
+
+	a.Money.AddDebt(friendName, username, amount, reason)
+
+	res.WriteHeader(http.StatusCreated)
+}
+
+func (a *App) AddDebtToGroup(res http.ResponseWriter, req *http.Request) {
+	headerContentType := req.Header.Get("Content-Type")
+	if headerContentType != "application/json" {
+		http.Error(res, "Content Type is not application/json", http.StatusUnsupportedMediaType)
+		return
+	}
+
+	creditor := req.Header.Get("Username")
+	body, _ := ioutil.ReadAll(req.Body)
+
+	var data map[string]interface{}
+	if err := json.Unmarshal(body, &data); err != nil {
+		http.Error(res, "Error in Unmarshal", http.StatusInternalServerError)
+		return
+	}
+
+	groupName := data["group"].(string)
+	amount := int(data["amount"].(float64)) // todo?
+	reason := data["reason"].(string)
+
+	// Find GroupID of group with name <groupName>
+	// In which groups participates the creditor
+	groupIDs := a.Participates.GetGroups(creditor)
+
+	groupID, err := a.Groups.FindGroupID(groupName, groupIDs)
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	fAmount := math.Ceil(float64(amount) / float64(a.Participants.GetNumberOfParticipants(groupID)))
+	amount = int(fAmount)
+
+	participants := a.Participants.GetParticipants(groupID)
+
+	a.Groups.AddDebt(creditor, groupID, participants, amount, reason)
+
+	res.WriteHeader(http.StatusCreated)
 }

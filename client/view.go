@@ -4,7 +4,9 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"math"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -61,6 +63,9 @@ func (c *Client) Welcome() {
 		action := GetUserInput(c.username + "> ")
 
 		switch action {
+		case "show_users":
+			users := c.ShowUsers()
+			printData(users, "Users: ", "There are no users!")
 		case "add_friend":
 			friend := GetUserInput("Friend`s name> ")
 			err := c.AddFriend(friend)
@@ -88,21 +93,42 @@ func (c *Client) Welcome() {
 			//	msg := "Congrats, you and " + friend + "are now friends!"
 			//	fmt.Println(msg)
 			//}
-
-		case "show_users":
-			users := c.ShowUsers()
-			printData(users, "Users: ", "There are no users!")
 		case "show_groups":
 			groups := c.ShowGroups()
 			printData(groups, "You participate in: ", "You don`t participate in any group!")
+		case "split":
+			friend := GetUserInput("Friend`s name> ")
+			textAmount := GetUserInput("Amount> ")
+			amount, err := strconv.Atoi(textAmount)
+			if err != nil || amount <= 0 {
+				fmt.Println("Amount should be a number, bigger than 1!")
+				continue
+			}
+			reason := GetUserInput("Reason for payment> ")
+			splitAmount := int(math.Ceil(float64(amount) / 2))
+			err = c.AddDebtToFriend(friend, splitAmount, reason)
+			if err != nil {
+				fmt.Println(err.Error())
+			}
+		case "split_group":
+			group := GetUserInput("Group`s name> ")
+			textAmount := GetUserInput("Amount> ")
+			amount, err := strconv.Atoi(textAmount)
+			if err != nil || amount <= 0 {
+				fmt.Println("Amount should be a number, bigger than 1!")
+				continue
+			}
+			reason := GetUserInput("Reason for payment> ")
+			err = c.AddDebtToGroup(group, amount, reason)
+			if err != nil {
+				fmt.Println(err.Error())
+			}
+		case "pay_back":
+			break
 		case "owe":
 			break
 		case "lend":
 			break
-		case "payed":
-			break // amount to reason ..
-		case "payed_group":
-			break // amount to reason ..
 		case "exit":
 			return
 		default:

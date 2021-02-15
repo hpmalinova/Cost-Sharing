@@ -1,6 +1,9 @@
 package storage
 
-import "github.com/google/uuid"
+import (
+	"errors"
+	"github.com/google/uuid"
+)
 
 // In server
 type Groups struct {
@@ -50,12 +53,22 @@ func (g *Groups) GetGroupNames(groupIDs []uuid.UUID) []string {
 }
 
 func (g *Groups) AddDebt(creditor string, groupID uuid.UUID, participants []string, amount int, reason string) {
-	moneyEx := g.Groups[groupID].MoneyExchange
+	moneyEx := g.Groups[groupID].MoneyExchange // TODO
 	for _, debtor := range participants {
 		if debtor != creditor {
 			moneyEx.AddDebt(debtor, creditor, amount, reason)
 		}
 	}
+}
+
+func (g *Groups) FindGroupID(groupName string, participatesIn []uuid.UUID) (uuid.UUID, error) {
+	for _, groupID := range participatesIn {
+		if g.GetName(groupID) == groupName {
+			return groupID, nil
+		}
+	}
+	msg := "you don`t participate in group called " + groupName
+	return uuid.Nil, errors.New(msg)
 }
 
 // TODO

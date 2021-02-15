@@ -10,7 +10,8 @@ func (m *MoneyExchange) AddUser(username string) {
 	m.Lends[username] = To{To: map[string]Debt{}}
 }
 
-func (m *MoneyExchange) AddDebt(debtor, creditor string, amount int, reason string) { // "debtor" has to give "creditor" 20lv
+// <debtor> has to give <creditor> <amount>lv for <reason>
+func (m *MoneyExchange) AddDebt(debtor, creditor string, amount int, reason string) {
 	// Check if creditor owes something to debtor (In the past)
 	if debt, ok := m.Owes[creditor].To[debtor]; ok {
 		if debt.Amount > amount {

@@ -30,7 +30,7 @@ func CheckPasswordHash(password, hash string) bool {
 
 func (u *Users) Create(username string, password string) error {
 	// Check if username already exists:
-	if _, ok := u.Users[username]; ok {
+	if u.DoesExist(username) {
 		return errors.New("this username is already taken")
 	}
 
@@ -67,4 +67,11 @@ func (u *Users) GetUsernames() []string {
 		usernames = append(usernames, user.Username)
 	}
 	return usernames
+}
+
+func (u *Users) DoesExist(username string) bool {
+	if _, ok := u.Users[username]; ok {
+		return true
+	}
+	return false
 }
