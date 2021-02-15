@@ -21,7 +21,7 @@ func (f *Friends) GetFriendsOf(username string) []string {
 
 	i := 0
 	for k := range m {
-		friends[i] = string(k)
+		friends[i] = k
 		i++
 	}
 

@@ -322,4 +322,3 @@ func (a *App) ShowLentGroup(res http.ResponseWriter, req *http.Request) {
 	marshal, _ := json.Marshal(lent)
 	_, _ = res.Write(marshal)
 }
-
