@@ -190,6 +190,34 @@ func (c *Client) AddDebtToGroup(group string, amount int, reason string) error {
 	return nil
 }
 
+type DebtC struct {
+	To     string
+	Amount int
+	Reason string
+}
+
+func (c *Client) ShowOwed() []DebtC {
+	req, _ := http.NewRequest("GET", "http://localhost:8080/costSharing/home/owe", nil)
+	req.SetBasicAuth(c.username, c.password)
+	res, _ := c.Do(req)
+
+	var owed []DebtC
+	body, _ := ioutil.ReadAll(res.Body)
+	_ = json.Unmarshal(body, &owed)
+	return owed
+}
+
+func (c *Client) ShowLent() []DebtC {
+	req, _ := http.NewRequest("GET", "http://localhost:8080/costSharing/home/lend", nil)
+	req.SetBasicAuth(c.username, c.password)
+	res, _ := c.Do(req)
+
+	var lent []DebtC
+	body, _ := ioutil.ReadAll(res.Body)
+	_ = json.Unmarshal(body, &lent)
+	return lent
+}
+
 func main() {
 	var c Client
 	c.username = "p"

@@ -14,8 +14,6 @@ func main() {
 	app.Server.Router.HandleFunc("/costSharing/createAccount", app.CreateUser).Methods("POST")
 	app.Server.Router.HandleFunc("/costSharing/login", app.Login).Methods("POST")
 
-	//app.Server.Router.HandleFunc("/costSharing/home", app.Welcome).Methods("POST")
-
 	// # Users
 	app.Server.Router.HandleFunc("/costSharing/home/showUsers", server.Notify(&app, app.ShowUsers)).Methods("GET") // todo show users
 
@@ -30,6 +28,9 @@ func main() {
 	// # Debt
 	app.Server.Router.HandleFunc("/costSharing/home/split", server.Notify(&app, app.AddDebtToFriend)).Methods("POST")
 	app.Server.Router.HandleFunc("/costSharing/home/split_group", server.Notify(&app, app.AddDebtToGroup)).Methods("POST")
+
+	app.Server.Router.HandleFunc("/costSharing/home/owe", server.Notify(&app, app.ShowOwe)).Methods("GET")
+	app.Server.Router.HandleFunc("/costSharing/home/lend", server.Notify(&app, app.AddDebtToGroup)).Methods("GET")
 
 	_ = http.ListenAndServe(":8080", app.Server.Router)
 }

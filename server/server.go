@@ -243,3 +243,19 @@ func (a *App) AddDebtToGroup(res http.ResponseWriter, req *http.Request) {
 
 	res.WriteHeader(http.StatusCreated)
 }
+
+func (a *App) ShowOwed(res http.ResponseWriter, req *http.Request) {
+	debtor := req.Header.Get("Username")
+
+	owed := a.Money.GetOwed(debtor) // {to, amount, reason}
+	marshal, _ := json.Marshal(owed)
+	_, _ = res.Write(marshal)
+}
+
+func (a *App) ShowLent(res http.ResponseWriter, req *http.Request) {
+	creditor := req.Header.Get("Username")
+
+	lent := a.Money.GetLent(creditor) // {to, amount, reason}
+	marshal, _ := json.Marshal(lent)
+	_, _ = res.Write(marshal)
+}

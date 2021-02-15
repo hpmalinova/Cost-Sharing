@@ -126,9 +126,12 @@ func (c *Client) Welcome() {
 		case "pay_back":
 			break
 		case "owe":
-			break
+			o := c.ShowOwed()
+			printDebt(o, "You owe money to: ", "You don`t owe any money!")
+			// Silvia - 50 for food
 		case "lend":
-			break
+			l := c.ShowLent()
+			printDebt(l, "You`ve lent money to: ", "You haven`t lent any money!")
 		case "exit":
 			return
 		default:
@@ -143,5 +146,16 @@ func printData(data []string, title, emptyMsg string) {
 		fmt.Println(strings.Join(data, ", "))
 	} else {
 		fmt.Println(emptyMsg)
+	}
+}
+
+func printDebt(data []DebtC, title, empty string) {
+	if len(data) > 0 {
+		fmt.Println(title)
+		for i, d := range data {
+			_, _ = fmt.Fprintln(os.Stdout, i+1, ".", d.To, "-", d.Amount, "lv", "for", d.Reason)
+		}
+	} else {
+		fmt.Println(empty)
 	}
 }
