@@ -76,3 +76,21 @@ func (g *Groups) FindGroupID(groupName string, participatesIn []uuid.UUID) (uuid
 	msg := "you don`t participate in group called " + groupName
 	return uuid.Nil, errors.New(msg)
 }
+
+func (g *Groups) GetOwed(debtor string, groupIDs []uuid.UUID) map[string][]DebtC {
+	owed := make(map[string][]DebtC, len(groupIDs))
+	for _, groupID := range groupIDs {
+		exchange := g.GetGroup(groupID).MoneyExchange
+		owed[g.GetName(groupID)] = exchange.GetOwed(debtor)
+	}
+	return owed
+}
+
+func (g *Groups) GetLent(creditor string, groupIDs []uuid.UUID) map[string][]DebtC {
+	lent := make(map[string][]DebtC, len(groupIDs))
+	for _, groupID := range groupIDs {
+		exchange := g.GetGroup(groupID).MoneyExchange
+		lent[g.GetName(groupID)] = exchange.GetLent(creditor)
+	}
+	return lent
+}

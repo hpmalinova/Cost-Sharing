@@ -246,6 +246,28 @@ func (c *Client) ShowLent() []DebtC {
 	return lent
 }
 
+func (c *Client) ShowOwedGroup() map[string][]DebtC {
+	req, _ := http.NewRequest("GET", "http://localhost:8080/costSharing/home/oweGroup", nil)
+	req.SetBasicAuth(c.username, c.password)
+	res, _ := c.Do(req)
+
+	var owed map[string][]DebtC
+	body, _ := ioutil.ReadAll(res.Body)
+	_ = json.Unmarshal(body, &owed)
+	return owed
+}
+
+func (c *Client) ShowLentGroup() []DebtC {
+	req, _ := http.NewRequest("GET", "http://localhost:8080/costSharing/home/lendGroup", nil)
+	req.SetBasicAuth(c.username, c.password)
+	res, _ := c.Do(req)
+
+	var lent []DebtC
+	body, _ := ioutil.ReadAll(res.Body)
+	_ = json.Unmarshal(body, &lent)
+	return lent
+}
+
 func main() {
 	var c Client
 	c.username = "p"

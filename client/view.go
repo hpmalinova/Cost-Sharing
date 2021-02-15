@@ -158,6 +158,11 @@ func (c *Client) Welcome() {
 		case "lend":
 			l := c.ShowLent()
 			printDebt(l, "You`ve lent money to: ", "You haven`t lent any money!")
+		case "owe_group":
+			// Group -> []{To, Amount, Reason}
+			break
+		case "lend_group":
+			break
 		case "exit":
 			return
 		default:

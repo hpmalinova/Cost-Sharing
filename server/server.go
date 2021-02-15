@@ -304,3 +304,22 @@ func (a *App) ShowLent(res http.ResponseWriter, req *http.Request) {
 	marshal, _ := json.Marshal(lent)
 	_, _ = res.Write(marshal)
 }
+
+func (a *App) ShowOwedGroup(res http.ResponseWriter, req *http.Request) {
+	debtor := req.Header.Get("Username")
+	groupIDs := a.Participates.GetGroups(debtor)
+
+	owed := a.Groups.GetOwed(debtor, groupIDs)
+	marshal, _ := json.Marshal(owed)
+	_, _ = res.Write(marshal)
+}
+
+func (a *App) ShowLentGroup(res http.ResponseWriter, req *http.Request) {
+	creditor := req.Header.Get("Username")
+	groupIDs := a.Participates.GetGroups(creditor)
+
+	lent := a.Groups.GetLent(creditor, groupIDs)
+	marshal, _ := json.Marshal(lent)
+	_, _ = res.Write(marshal)
+}
+

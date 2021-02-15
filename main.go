@@ -34,6 +34,8 @@ func main() {
 	// ## To group
 	app.Server.Router.HandleFunc("/costSharing/home/addDebtGroup", server.Notify(&app, app.AddDebtToGroup)).Methods("POST")
 	app.Server.Router.HandleFunc("/costSharing/home/returnDebt", server.Notify(&app, app.ReturnDebt)).Methods("POST")
+	app.Server.Router.HandleFunc("/costSharing/home/oweGroup", server.Notify(&app, app.ShowOwedGroup)).Methods("GET")
+	app.Server.Router.HandleFunc("/costSharing/home/lendGroup", server.Notify(&app, app.ShowLentGroup)).Methods("GET")
 
 	_ = http.ListenAndServe(":8080", app.Server.Router)
 }
