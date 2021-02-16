@@ -11,11 +11,11 @@ func TestMoneyExchange_AddUser(t *testing.T) {
 			Owes:  map[string]To{},
 			Lends: map[string]To{},
 		}
-		m.AddUser(username)
+		m.AddUser(peter)
 
 		expected := MoneyExchange{
-			Owes:  map[string]To{username: {To: map[string]Debt{}}},
-			Lends: map[string]To{username: {To: map[string]Debt{}}},
+			Owes:  map[string]To{peter: {To: map[string]Debt{}}},
+			Lends: map[string]To{peter: {To: map[string]Debt{}}},
 		}
 
 		assert.Equal(t, expected.Lends, m.Lends)
@@ -29,18 +29,18 @@ func TestMoneyExchange_GetLent(t *testing.T) {
 			Owes:  map[string]To{},
 			Lends: map[string]To{},
 		}
-		actual := m.GetLent(username)
+		actual := m.GetLent(peter)
 		expected := []DebtC{}
 		assert.Equal(t, expected, actual)
 	})
 	t.Run("when multiple people owe you money", func(t *testing.T) {
 		m := MoneyExchange{Lends: map[string]To{
-			username: {To: map[string]Debt{
-				username2: {amount, reason},
-				username3: {amount, reason}}}}}
-		actual := m.GetLent(username)
-		expected := []DebtC{{To: username2, Amount: amount, Reason: reason},
-			{To: username3, Amount: amount, Reason: reason}}
+			peter: {To: map[string]Debt{
+				george: {amount20, food},
+				lily:   {amount20, food}}}}}
+		actual := m.GetLent(peter)
+		expected := []DebtC{{To: george, Amount: amount20, Reason: food},
+			{To: lily, Amount: amount20, Reason: food}}
 		assert.True(t, containsAll(expected, actual))
 	})
 }
@@ -51,64 +51,61 @@ func TestMoneyExchange_GetOwed(t *testing.T) {
 			Owes:  map[string]To{},
 			Lends: map[string]To{},
 		}
-		actual := m.GetOwed(username)
+		actual := m.GetOwed(peter)
 		expected := []DebtC{}
 		assert.Equal(t, expected, actual)
 	})
 	t.Run("when you owe money to multiple people", func(t *testing.T) {
 		m := MoneyExchange{Owes: map[string]To{
-			username: {To: map[string]Debt{
-				username2: {amount, reason},
-				username3: {amount, reason}}}}}
-		actual := m.GetOwed(username)
-		expected := []DebtC{{To: username2, Amount: amount, Reason: reason},
-			{To: username3, Amount: amount, Reason: reason}}
+			peter: {To: map[string]Debt{
+				george: {amount20, food},
+				lily:   {amount20, food}}}}}
+		actual := m.GetOwed(peter)
+		expected := []DebtC{{To: george, Amount: amount20, Reason: food},
+			{To: lily, Amount: amount20, Reason: food}}
 		assert.True(t, containsAll(expected, actual))
 	})
 }
 
 func TestMoneyExchange_AddDebt(t *testing.T) {
 	t.Run("test owes when the struct is empty", func(t *testing.T) {
-		m := getMoneyExchange(username, username2)
-		m.AddDebt(username, username2, amount, reason)
+		m := getMoneyExchange(peter, george)
+		m.AddDebt(peter, george, amount20, food)
 
-		expected := []DebtC{{username2, amount, reason}}
+		expected := []DebtC{{george, amount20, food}}
 
-		actual := m.GetOwed(username)
+		actual := m.GetOwed(peter)
 
 		assert.Equal(t, expected, actual)
-		//expected := MoneyExchange{Owes: map[string]To{username: {To: map[string]Debt{username2: {amount, reason} }}}}
-		//debt := DebtC{To: username2, Amount: amount, Reason: reason}
-		//assert.Equal(t, expected, m)
 	})
 	t.Run("test lends when the struct is empty", func(t *testing.T) {
-		m := getMoneyExchange(username, username2)
-		m.AddDebt(username, username2, amount, reason)
+		m := getMoneyExchange(peter, george)
+		m.AddDebt(peter, george, amount20, food)
 
-		expected := []DebtC{{username, amount, reason}}
+		expected := []DebtC{{peter, amount20, food}}
 
-		actual := m.GetLent(username2)
+		actual := m.GetLent(george)
 
 		assert.Equal(t, expected, actual)
 	})
 	t.Run("when the creditor owes more to the debtor", func(t *testing.T) {
-		m := getMoneyExchange(username, username2)
+		m := getMoneyExchange(peter, george)
 		// Peter takes 20lv from George(in the past)
-		m.AddDebt(username, username2, amount, reason)
+		m.AddDebt(peter, george, amount20, food)
 		// George takes 100lv from Peter (now)
-		m.AddDebt(username2, username, amount2, reason2)
+		m.AddDebt(george, peter, amount100, travel)
 		// => George owes Peter 80lv
-		expectedOwed := []DebtC{{username, amount2 - amount, reason2}}
-		actualOwed := m.GetOwed(username2)
+		expectedOwed := []DebtC{{peter, amount100 - amount20, travel}}
+		actualOwed := m.GetOwed(george)
 
 		// => Peter lends 80lv to George
-		expectedLent := []DebtC{{username2, amount2 - amount, reason2}}
-		actualLent := m.GetLent(username)
+		expectedLent := []DebtC{{george, amount100 - amount20, travel}}
+		actualLent := m.GetLent(peter)
 
 		// => Peter does not owe any money to George
 		expectedEmpty := []DebtC{}
-		actualEmptyOwed := m.GetOwed(username)
-		actualEmptyLent := m.GetLent(username2)
+		actualEmptyOwed := m.GetOwed(peter)
+		actualEmptyLent := m.GetLent(george)
 
 		assert.Equal(t, expectedOwed, actualOwed)
 		assert.Equal(t, expectedLent, actualLent)
@@ -117,17 +114,17 @@ func TestMoneyExchange_AddDebt(t *testing.T) {
 
 	})
 	t.Run("when the creditor owes the same to the debtor", func(t *testing.T) {
-		m := getMoneyExchange(username, username2)
+		m := getMoneyExchange(peter, george)
 		// Peter takes 20lv from George (in the past)
-		m.AddDebt(username, username2, amount, reason)
+		m.AddDebt(peter, george, amount20, food)
 		// George takes 20lv from Peter (now)
-		m.AddDebt(username2, username, amount, reason2)
+		m.AddDebt(george, peter, amount20, travel)
 		// => Friendship is restored
 		expectedEmpty := []DebtC{}
-		actualOwed1 := m.GetOwed(username)
-		actualOwed2 := m.GetOwed(username2)
-		actualLent1 := m.GetLent(username)
-		actualLent2 := m.GetLent(username2)
+		actualOwed1 := m.GetOwed(peter)
+		actualOwed2 := m.GetOwed(george)
+		actualLent1 := m.GetLent(peter)
+		actualLent2 := m.GetLent(george)
 
 		assert.Equal(t, expectedEmpty, actualOwed1)
 		assert.Equal(t, expectedEmpty, actualOwed2)
@@ -135,22 +132,22 @@ func TestMoneyExchange_AddDebt(t *testing.T) {
 		assert.Equal(t, expectedEmpty, actualLent2)
 	})
 	t.Run("when the creditor owes less to the debtor", func(t *testing.T) {
-		m := getMoneyExchange(username, username2)
+		m := getMoneyExchange(peter, george)
 		// Peter takes 100lv from George(in the past)
-		m.AddDebt(username, username2, amount2, reason)
+		m.AddDebt(peter, george, amount100, food)
 		// George takes 20lv from Peter (now)
-		m.AddDebt(username2, username, amount, reason2)
+		m.AddDebt(george, peter, amount20, travel)
 		// => Peter owes George 80lv
-		expectedOwed := []DebtC{{username2, amount2 - amount, reason}}
-		actualOwed := m.GetOwed(username)
+		expectedOwed := []DebtC{{george, amount100 - amount20, food}}
+		actualOwed := m.GetOwed(peter)
 		// => George lends 80lv to Peter
-		expectedLent := []DebtC{{username, amount2 - amount, reason}}
-		actualLent := m.GetLent(username2)
+		expectedLent := []DebtC{{peter, amount100 - amount20, food}}
+		actualLent := m.GetLent(george)
 
 		// => George does not owe any money to Peter
 		expectedEmpty := []DebtC{}
-		actualEmptyOwed := m.GetOwed(username2)
-		actualEmptyLent := m.GetLent(username)
+		actualEmptyOwed := m.GetOwed(george)
+		actualEmptyLent := m.GetLent(peter)
 
 		assert.Equal(t, expectedOwed, actualOwed)
 		assert.Equal(t, expectedLent, actualLent)
@@ -159,23 +156,23 @@ func TestMoneyExchange_AddDebt(t *testing.T) {
 
 	})
 	t.Run("when the debtor owes more money to the creditor", func(t *testing.T) {
-		m := getMoneyExchange(username, username2)
+		m := getMoneyExchange(peter, george)
 		// Peter takes 20lv from George(in the past)
-		m.AddDebt(username, username2, amount, reason)
+		m.AddDebt(peter, george, amount20, food)
 		// Peter takes 100lv from George (now)
-		m.AddDebt(username, username2, amount2, reason2)
+		m.AddDebt(peter, george, amount100, travel)
 		// => Peter owes George 120lv
-		newReason := "" + reason + ", " + reason2
-		expectedOwed := []DebtC{{username2, amount + amount2, newReason}}
-		actualOwed := m.GetOwed(username)
+		newReason := "" + food + ", " + travel
+		expectedOwed := []DebtC{{george, amount20 + amount100, newReason}}
+		actualOwed := m.GetOwed(peter)
 		// => George lends 80lv to Peter
-		expectedLent := []DebtC{{username, amount2 + amount, newReason}}
-		actualLent := m.GetLent(username2)
+		expectedLent := []DebtC{{peter, amount100 + amount20, newReason}}
+		actualLent := m.GetLent(george)
 
 		// => George does not owe any money to Peter
 		expectedEmpty := []DebtC{}
-		actualEmptyOwed := m.GetOwed(username2)
-		actualEmptyLent := m.GetLent(username)
+		actualEmptyOwed := m.GetOwed(george)
+		actualEmptyLent := m.GetLent(peter)
 
 		assert.Equal(t, expectedOwed, actualOwed)
 		assert.Equal(t, expectedLent, actualLent)

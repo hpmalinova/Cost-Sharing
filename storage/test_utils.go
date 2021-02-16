@@ -3,18 +3,18 @@ package storage
 import "github.com/google/uuid"
 
 const (
-	username  = "Peter"
-	username2 = "George"
-	username3 = "Lily"
+	peter     = "peter"
+	george    = "george"
+	lily      = "lily"
 	password  = "123456"
 	password2 = "qwerty"
 
-	reason     = "Food"
-	reason2    = "Travel"
-	amount     = 20
-	amount2    = 100
-	groupName1 = "Christmas party"
-	groupName2 = "Traveling to Japan"
+	food           = "Food"
+	travel         = "Travel"
+	amount20       = 20
+	amount100      = 100
+	christmasParty = "Christmas party"
+	travelToJapan  = "Traveling to Japan"
 )
 
 var groupID1 = uuid.New()
