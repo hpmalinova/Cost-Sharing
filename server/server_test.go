@@ -232,7 +232,7 @@ func TestApp_ShowDebts(t *testing.T) {
 		actual := []storage.DebtC{}
 		_ = json.Unmarshal(body, &actual)
 
-		expected := []storage.DebtC{{george, amount, reason}}
+		expected := []storage.DebtC{{george, amount, food}}
 
 		assert.True(t, storage.ContainsAll(expected, actual))
 		assert.Equal(t, 200, response.StatusCode)
@@ -254,7 +254,7 @@ func TestApp_ShowLoans(t *testing.T) {
 		actual := []storage.DebtC{}
 		_ = json.Unmarshal(body, &actual)
 
-		expected := []storage.DebtC{{lily, amount, reason}}
+		expected := []storage.DebtC{{lily, amount, food}}
 
 		assert.True(t, storage.ContainsAll(expected, actual))
 		assert.Equal(t, 200, response.StatusCode)
@@ -265,7 +265,7 @@ func TestApp_CreateGroup(t *testing.T) {
 	t.Run("when successful", func(t *testing.T) {
 		participants := []string{lily, george}
 		body, _ := json.Marshal(map[string]interface{}{
-			"name": "Party",
+			"name":         "Party",
 			"participants": participants,
 		})
 		request, _ := http.NewRequest("POST", UrlCreateGroup, bytes.NewBuffer(body))
@@ -283,7 +283,7 @@ func TestApp_CreateGroup(t *testing.T) {
 
 func TestApp_ShowGroups(t *testing.T) {
 	t.Run("when participating in groups", func(t *testing.T) {
-		request, _ := http.NewRequest("GET", UrlShowFriends, nil)
+		request, _ := http.NewRequest("GET", UrlShowGroups, nil)
 		request.Header.Set("Username", peter)
 		recorder := httptest.NewRecorder()
 		app := InitApp(true)
@@ -327,12 +327,12 @@ func TestApp_ShowGroups(t *testing.T) {
 func TestApp_AddDebtToGroup(t *testing.T) {
 	t.Run("when successful", func(t *testing.T) {
 		body, _ := json.Marshal(map[string]interface{}{
-			"group":   george,
-			"amount":   20,
-			"reason":   "food",
+			"group":  "test",
+			"amount": 30,
+			"reason": food,
 		})
 
-		request, _ := http.NewRequest("POST", UrlAddDebt, bytes.NewBuffer(body))
+		request, _ := http.NewRequest("POST", UrlAddDebtToGroup, bytes.NewBuffer(body))
 		request.Header.Set("Username", peter)
 		request.Header.Set("Content-type", "application/json")
 		recorder := httptest.NewRecorder()
@@ -344,27 +344,94 @@ func TestApp_AddDebtToGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusCreated, response.StatusCode)
 	})
-	t.Run("when not friends", func(t *testing.T) {
+	t.Run("when client not a member", func(t *testing.T) {
 		body, _ := json.Marshal(map[string]interface{}{
-			"friend":   george,
-			"amount":   20,
-			"reason":   "food",
-			"creditor": true,
+			"group":  "test",
+			"amount": 30,
+			"reason": food,
 		})
 
-		request, _ := http.NewRequest("POST", UrlAddDebt, bytes.NewBuffer(body))
-		request.Header.Set("Username", lily)
+		request, _ := http.NewRequest("POST", UrlAddDebtToGroup, bytes.NewBuffer(body))
+		request.Header.Set("Username", george)
 		request.Header.Set("Content-type", "application/json")
 		recorder := httptest.NewRecorder()
 		app := InitApp(true)
 
-		app.AddDebtToFriend(recorder, request)
+		app.AddDebtToGroup(recorder, request)
 
 		response := recorder.Result()
 		err, _ := ioutil.ReadAll(response.Body)
 
 		assert.Equal(t, http.StatusBadRequest, response.StatusCode)
-		assert.Equal(t, george+" is not your friend!\n", string(err))
+		msg := "you don`t participate in group called " + "test" + "\n"
+		assert.Equal(t, msg, string(err))
+	})
+
+}
+
+func TestApp_ReturnDebt(t *testing.T) {
+	t.Run("when successful", func(t *testing.T) {
+		body, _ := json.Marshal(map[string]interface{}{
+			"friend":    peter,
+			"amount":    amount,
+			"groupName": presents,
+		})
+
+		request, _ := http.NewRequest("POST", UrlReturnDebt, bytes.NewBuffer(body))
+		request.Header.Set("Username", lily)
+		request.Header.Set("Content-type", "application/json")
+		recorder := httptest.NewRecorder()
+		app := InitApp(true)
+
+		app.ReturnDebt(recorder, request)
+
+		response := recorder.Result()
+
+		assert.Equal(t, http.StatusCreated, response.StatusCode)
+	})
+	t.Run("when client not a member", func(t *testing.T) {
+		body, _ := json.Marshal(map[string]interface{}{
+			"friend":    peter,
+			"amount":    amount,
+			"groupName": presents,
+		})
+
+		request, _ := http.NewRequest("POST", UrlReturnDebt, bytes.NewBuffer(body))
+		request.Header.Set("Username", george)
+		request.Header.Set("Content-type", "application/json")
+		recorder := httptest.NewRecorder()
+		app := InitApp(true)
+
+		app.ReturnDebt(recorder, request)
+
+		response := recorder.Result()
+		err, _ := ioutil.ReadAll(response.Body)
+
+		assert.Equal(t, http.StatusBadRequest, response.StatusCode)
+		msg := "you don`t participate in group called " + presents + "\n"
+		assert.Equal(t, msg, string(err))
+	})
+	t.Run("when friend not a member", func(t *testing.T) {
+		body, _ := json.Marshal(map[string]interface{}{
+			"friend":    george,
+			"amount":    amount,
+			"groupName": presents,
+		})
+
+		request, _ := http.NewRequest("POST", UrlReturnDebt, bytes.NewBuffer(body))
+		request.Header.Set("Username", lily)
+		request.Header.Set("Content-type", "application/json")
+		recorder := httptest.NewRecorder()
+		app := InitApp(true)
+
+		app.ReturnDebt(recorder, request)
+
+		response := recorder.Result()
+		err, _ := ioutil.ReadAll(response.Body)
+
+		assert.Equal(t, http.StatusBadRequest, response.StatusCode)
+		msg := george + " is not part of " + presents + "\n"
+		assert.Equal(t, msg, string(err))
 	})
 }
 
@@ -383,7 +450,7 @@ func TestApp_ShowDebtsToGroups(t *testing.T) {
 		actual := map[string][]storage.DebtC{}
 		_ = json.Unmarshal(body, &actual)
 
-		expected := map[string][]storage.DebtC{presents : {{peter, amount, reason}}}
+		expected := map[string][]storage.DebtC{presents: {{peter, amount, food}}}
 
 		assert.True(t, storage.Equal(expected, actual))
 		assert.Equal(t, 200, response.StatusCode)
@@ -406,8 +473,8 @@ func TestApp_ShowLoansToGroups(t *testing.T) {
 		_ = json.Unmarshal(body, &actual)
 
 		expected := map[string][]storage.DebtC{
-			presents : {{lily, amount, reason}},
-			japan : {{george, amount, reason}, {maria, amount, reason}},
+			presents: {{lily, amount, food}},
+			japan:    {{george, amount, food}, {maria, amount, food}},
 		}
 
 		fmt.Println(actual, "\n", expected)

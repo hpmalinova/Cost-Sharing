@@ -37,14 +37,14 @@ const (
 	george    = "george"
 	lily      = "lily"
 	maria     = "maria"
-	juan = "juan"
+	juan      = "juan"
 	amount    = 20
-	reason    = "food"
-	presents = "presents"
-	japan = "japan"
+	food      = "food"
+	presents  = "presents"
+	japan     = "japan"
 )
 
-func (a *App) InitData(){
+func (a *App) InitData() {
 	users := storage.Users{Users: map[string]storage.User{}}
 	_ = users.Create(peter, peterPass)
 	_ = users.Create(george, "7890")
@@ -62,30 +62,37 @@ func (a *App) InitData(){
 	moneyExchange.AddUser(peter)
 	moneyExchange.AddUser(george)
 	moneyExchange.AddUser(lily)
-	moneyExchange.AddDebt(peter, george, amount, reason)
-	moneyExchange.AddDebt(lily, peter, amount, reason)
+	moneyExchange.AddDebt(peter, george, amount, food)
+	moneyExchange.AddDebt(lily, peter, amount, food)
 	a.Money = moneyExchange
 
 	groups := storage.Groups{Groups: map[uuid.UUID]storage.Group{}}
 	p1 := []string{peter, lily}
 	id1 := groups.CreateGroup(presents, p1)
-	groups.AddDebt(peter, id1, p1, amount, reason)
+	groups.AddDebt(peter, id1, p1, amount, food)
 	p2 := []string{peter, george, maria}
 	id2 := groups.CreateGroup(japan, p2)
-	groups.AddDebt(peter, id2, p2, amount, reason)
+	groups.AddDebt(peter, id2, p2, amount, food)
+	p3 := []string{peter, maria, lily}
+	id3 := groups.CreateGroup("test", p3)
 	a.Groups = groups
 
 	participants := storage.Participants{Participants: map[uuid.UUID]map[string]struct{}{}}
 	participants.Add(id1, p1)
 	participants.Add(id2, p2)
+	participants.Add(id3, p3)
 	a.Participants = participants
 
-	participates := storage.Participates{map[string]map[uuid.UUID]struct{}{}}
+	participates := storage.Participates{Participates: map[string]map[uuid.UUID]struct{}{}}
 	participates.Add(peter, id1)
 	participates.Add(lily, id1)
 	participates.Add(peter, id2)
 	participates.Add(george, id2)
 	participates.Add(maria, id2)
+	participates.Add(peter, id3)
+	participates.Add(maria, id3)
+	participates.Add(lily, id3)
+
 	a.Participates = participates
 }
 
@@ -99,7 +106,7 @@ func InitApp(withInitData bool) App {
 		Participates: storage.Participates{Participates: map[string]map[uuid.UUID]struct{}{}},
 		Server:       NewServer(),
 	}
-	if withInitData{
+	if withInitData {
 		a.InitData()
 	}
 	return a
@@ -252,7 +259,6 @@ func (a *App) ShowLoans(res http.ResponseWriter, req *http.Request) {
 	_, _ = res.Write(marshal)
 }
 
-
 // # Groups
 
 // CreateGroup receives map[string]interface{}{"name": groupName, "participants": []usernames}
@@ -311,7 +317,7 @@ func (a *App) ShowGroups(res http.ResponseWriter, req *http.Request) {
 // If the content type is not "application/json", returns http.StatusUnsupportedMediaType.
 // If there is a problem with the Unmarshal, returns http.StatusInternalServerError.
 // If the client does not participate in group with that name, return http.StatusBadRequest.
-// Divides the amount of bebt into equal parts (int of ceil(result)) among all of the participants
+// Divides the amount of debt into equal parts (int of ceil(result)) among all of the participants
 // If the request is successful, returns http.StatusCreated.
 func (a *App) AddDebtToGroup(res http.ResponseWriter, req *http.Request) {
 	headerContentType := req.Header.Get("Content-Type")
@@ -353,7 +359,12 @@ func (a *App) AddDebtToGroup(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusCreated)
 }
 
-// If there is a problem with the Unmarshal, returns http.StatusInternalServerError
+//ReturnDebt receives map[string]interface{} with keys: {"friend", "amount", "groupName"}.
+//If the content type is not "application/json", returns http.StatusUnsupportedMediaType.
+//If there is a problem with the Unmarshal, returns http.StatusInternalServerError.
+//If the client does not participate in group with that name, return http.StatusBadRequest.
+//If the friend does not participate in group with that name, return http.StatusBadRequest.
+//If the request is successful, returns http.StatusCreated.
 func (a *App) ReturnDebt(res http.ResponseWriter, req *http.Request) {
 	headerContentType := req.Header.Get("Content-Type")
 	if headerContentType != "application/json" {
@@ -371,7 +382,7 @@ func (a *App) ReturnDebt(res http.ResponseWriter, req *http.Request) {
 	}
 
 	friend := data["friend"].(string)
-	amount := int(data["amount"].(float64)) // todo?
+	amount := int(data["amount"].(float64))
 	groupName := data["groupName"].(string)
 
 	groupIDs := a.Participates.GetGroups(debtor)
