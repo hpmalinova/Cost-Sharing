@@ -6,11 +6,6 @@ import (
 	"testing"
 )
 
-const (
-	password  = "123456"
-	password2 = "qwerty"
-)
-
 func TestUsers_Create(t *testing.T) {
 	t.Run("when creating user with free username", func(t *testing.T) {
 		u := Users{Users: map[string]User{}}

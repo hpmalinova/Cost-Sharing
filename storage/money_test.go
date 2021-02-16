@@ -5,16 +5,6 @@ import (
 	"testing"
 )
 
-const (
-	username  = "Peter"
-	username2 = "George"
-	username3 = "Lily"
-	reason    = "Food"
-	reason2   = "Travel"
-	amount    = 20
-	amount2   = 100
-)
-
 func TestMoneyExchange_AddUser(t *testing.T) {
 	t.Run("when adding user", func(t *testing.T) {
 		m := MoneyExchange{
@@ -192,35 +182,4 @@ func TestMoneyExchange_AddDebt(t *testing.T) {
 		assert.Equal(t, expectedEmpty, actualEmptyOwed)
 		assert.Equal(t, expectedEmpty, actualEmptyLent)
 	})
-}
-
-// Help functions
-func containsAll(a []DebtC, b []DebtC) bool {
-	if len(a) != len(b) {
-		return false
-	}
-
-	for _, elem := range a {
-		if !containsElem(elem, b) {
-			return false
-		}
-	}
-
-	return true
-}
-
-func containsElem(elem DebtC, elems []DebtC) bool {
-	for _, e := range elems {
-		if e == elem {
-			return true
-		}
-	}
-	return false
-}
-
-func getMoneyExchange() MoneyExchange {
-	m := MoneyExchange{Owes: map[string]To{}, Lends: map[string]To{}}
-	m.AddUser(username)
-	m.AddUser(username2)
-	return m
 }

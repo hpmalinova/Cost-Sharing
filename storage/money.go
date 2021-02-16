@@ -69,14 +69,14 @@ func (m *MoneyExchange) AddDebt(debtor, creditor string, amount int, reason stri
 	m.Lends[creditor].To[debtor] = Debt{amount, reason}
 }
 
-// GetOwed Returns all of the users (their usernames) that has lent money to the debtor,
+// GetOwed Returns all of the users (their usernames) that have lent money to the debtor,
 // the amount of the loan and its reason
 func (m *MoneyExchange) GetOwed(debtor string) []DebtC {
 	return convertToClientData(m.Owes[debtor])
 	//return m.Owes[debtor]
 }
 
-// GetLent Returns all of the users (their usernames) that owes money to the creditor,
+// GetLent Returns all of the users (their usernames) that owe money to the creditor,
 // the amount of the loan and its reason
 func (m *MoneyExchange) GetLent(creditor string) []DebtC {
 	return convertToClientData(m.Lends[creditor])
