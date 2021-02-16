@@ -41,7 +41,7 @@ func TestMoneyExchange_GetLent(t *testing.T) {
 		actual := m.GetLent(peter)
 		expected := []DebtC{{To: george, Amount: amount20, Reason: food},
 			{To: lily, Amount: amount20, Reason: food}}
-		assert.True(t, containsAll(expected, actual))
+		assert.True(t, ContainsAll(expected, actual))
 	})
 }
 
@@ -63,7 +63,7 @@ func TestMoneyExchange_GetOwed(t *testing.T) {
 		actual := m.GetOwed(peter)
 		expected := []DebtC{{To: george, Amount: amount20, Reason: food},
 			{To: lily, Amount: amount20, Reason: food}}
-		assert.True(t, containsAll(expected, actual))
+		assert.True(t, ContainsAll(expected, actual))
 	})
 }
 

@@ -75,7 +75,7 @@ func TestGroups_AddDebt(t *testing.T) {
 		actual := g.GetLent(peter, []uuid.UUID{id1})
 		fmt.Println("ACTUAL", actual)
 
-		assert.True(t, equal(expected, actual))
+		assert.True(t, Equal(expected, actual))
 	})
 }
 
@@ -115,8 +115,8 @@ func TestGroups_ReturnDebt(t *testing.T) {
 		expectedLent := map[string][]DebtC{christmasParty: {{george, amount20 / 2, food},
 			{lily, amount20, food}}}
 
-		assert.True(t, equal(expectedOwed, actualOwed))
-		assert.True(t, equal(expectedLent, actualLent))
+		assert.True(t, Equal(expectedOwed, actualOwed))
+		assert.True(t, Equal(expectedLent, actualLent))
 	})
 	t.Run("when returning more", func(t *testing.T) {
 		g := getGroups()
@@ -138,8 +138,8 @@ func TestGroups_ReturnDebt(t *testing.T) {
 		expectedLent := map[string][]DebtC{christmasParty: {{lily, amount20, food}}}
 		fmt.Println("ActualLent", actualLent, expectedLent)
 
-		assert.True(t, equal(expectedOwed, actualOwed))
-		assert.True(t, equal(expectedLent, actualLent))
+		assert.True(t, Equal(expectedOwed, actualOwed))
+		assert.True(t, Equal(expectedLent, actualLent))
 	})
 }
 
@@ -188,7 +188,7 @@ func TestGroups_GetOwed(t *testing.T) {
 			{lily, amount20, food}},
 			travelToJapan: {{lily, amount100, travel}}}
 
-		assert.True(t, equal(expected, actual))
+		assert.True(t, Equal(expected, actual))
 	})
 	t.Run("when you do not owe money to any group", func(t *testing.T) {
 		groups := getGroups()
@@ -198,7 +198,7 @@ func TestGroups_GetOwed(t *testing.T) {
 
 		actual := groups.GetOwed(peter, []uuid.UUID{id1, id2})
 		expected := map[string][]DebtC{}
-		assert.True(t, equal(expected, actual))
+		assert.True(t, Equal(expected, actual))
 	})
 }
 
@@ -222,7 +222,7 @@ func TestGroups_GetLent(t *testing.T) {
 			{lily, amount20, food}},
 			travelToJapan: {{lily, amount100, travel}}}
 
-		assert.True(t, equal(expected, actual))
+		assert.True(t, Equal(expected, actual))
 	})
 	t.Run("when you have not lent money to any group", func(t *testing.T) {
 		groups := getGroups()
@@ -232,6 +232,6 @@ func TestGroups_GetLent(t *testing.T) {
 
 		actual := groups.GetOwed(peter, []uuid.UUID{id1, id2})
 		expected := map[string][]DebtC{}
-		assert.True(t, equal(expected, actual))
+		assert.True(t, Equal(expected, actual))
 	})
 }

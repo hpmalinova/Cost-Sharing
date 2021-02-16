@@ -31,7 +31,7 @@ func getGroups() Groups {
 	return Groups{map[uuid.UUID]Group{}}
 }
 
-func containsAll(a []DebtC, b []DebtC) bool {
+func ContainsAll(a []DebtC, b []DebtC) bool {
 	if len(a) != len(b) {
 		return false
 	}
@@ -54,14 +54,14 @@ func containsElem(elem DebtC, elems []DebtC) bool {
 	return false
 }
 
-func equal(a map[string][]DebtC, b map[string][]DebtC) bool {
+func Equal(a map[string][]DebtC, b map[string][]DebtC) bool {
 	if len(a) != len(b) {
 		return false
 	}
 
 	for k, debtsA := range a {
 		if debtsB, ok := b[k]; ok {
-			if !containsAll(debtsA, debtsB) {
+			if !ContainsAll(debtsA, debtsB) {
 				return false
 			}
 		} else {

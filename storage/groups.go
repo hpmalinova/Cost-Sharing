@@ -91,7 +91,7 @@ func (g *Groups) GetOwed(debtor string, groupIDs []uuid.UUID) map[string][]DebtC
 	owed := make(map[string][]DebtC, len(groupIDs))
 	for _, groupID := range groupIDs {
 		exchange := g.GetGroup(groupID).MoneyExchange
-		if !containsAll(exchange.GetOwed(debtor), []DebtC{}) {
+		if !ContainsAll(exchange.GetOwed(debtor), []DebtC{}) {
 			owed[g.GetName(groupID)] = exchange.GetOwed(debtor)
 		}
 	}
