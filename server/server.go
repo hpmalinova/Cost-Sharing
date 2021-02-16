@@ -42,6 +42,7 @@ const (
 	food      = "food"
 	presents  = "presents"
 	japan     = "japan"
+	test      = "test"
 )
 
 func (a *App) InitData() {
@@ -74,7 +75,7 @@ func (a *App) InitData() {
 	id2 := groups.CreateGroup(japan, p2)
 	groups.AddDebt(peter, id2, p2, amount, food)
 	p3 := []string{peter, maria, lily}
-	id3 := groups.CreateGroup("test", p3)
+	id3 := groups.CreateGroup(test, p3)
 	a.Groups = groups
 
 	participants := storage.Participants{Participants: map[uuid.UUID]map[string]struct{}{}}

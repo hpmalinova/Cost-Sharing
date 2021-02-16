@@ -4,7 +4,6 @@ import (
 	"Cost-Sharing/storage"
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
@@ -89,7 +88,7 @@ func TestApp_ShowUsers(t *testing.T) {
 		_ = json.Unmarshal(body, &actual)
 		sort.Strings(actual)
 
-		expected := []string{peter, george, lily, maria}
+		expected := []string{peter, george, lily, maria, juan}
 		sort.Strings(expected)
 
 		assert.Equal(t, expected, actual)
@@ -297,7 +296,7 @@ func TestApp_ShowGroups(t *testing.T) {
 		_ = json.Unmarshal(body, &actual)
 		sort.Strings(actual)
 
-		expected := []string{presents, japan}
+		expected := []string{presents, japan, test}
 		sort.Strings(expected)
 
 		assert.Equal(t, expected, actual)
@@ -327,7 +326,7 @@ func TestApp_ShowGroups(t *testing.T) {
 func TestApp_AddDebtToGroup(t *testing.T) {
 	t.Run("when successful", func(t *testing.T) {
 		body, _ := json.Marshal(map[string]interface{}{
-			"group":  "test",
+			"group":  test,
 			"amount": 30,
 			"reason": food,
 		})
@@ -346,7 +345,7 @@ func TestApp_AddDebtToGroup(t *testing.T) {
 	})
 	t.Run("when client not a member", func(t *testing.T) {
 		body, _ := json.Marshal(map[string]interface{}{
-			"group":  "test",
+			"group":  test,
 			"amount": 30,
 			"reason": food,
 		})
@@ -363,7 +362,7 @@ func TestApp_AddDebtToGroup(t *testing.T) {
 		err, _ := ioutil.ReadAll(response.Body)
 
 		assert.Equal(t, http.StatusBadRequest, response.StatusCode)
-		msg := "you don`t participate in group called " + "test" + "\n"
+		msg := "you don`t participate in group called " + test + "\n"
 		assert.Equal(t, msg, string(err))
 	})
 
@@ -475,9 +474,8 @@ func TestApp_ShowLoansToGroups(t *testing.T) {
 		expected := map[string][]storage.DebtC{
 			presents: {{lily, amount, food}},
 			japan:    {{george, amount, food}, {maria, amount, food}},
+			test:     {},
 		}
-
-		fmt.Println(actual, "\n", expected)
 
 		assert.True(t, storage.Equal(expected, actual))
 		assert.Equal(t, 200, response.StatusCode)
