@@ -4,13 +4,26 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"log"
-
-	//"golang.org/x/crypto/ssh/terminal"
-	//_ "golang.org/x/crypto/ssh/terminal"
 	"io/ioutil"
+	"log"
 	"net/http"
-	//"syscall"
+)
+
+const (
+	UrlLogin             = "http://localhost" + Port + PathToLogin
+	UrlCreateAccount     = "http://localhost" + Port + PathToCreateAccount
+	UrlShowUsers         = "http://localhost" + Port + PathToShowUsers
+	UrlAddFriend         = "http://localhost" + Port + PathToAddFriend
+	UrlShowFriends       = "http://localhost" + Port + PathToShowFriends
+	UrlCreateGroup       = "http://localhost" + Port + PathToCreateGroup
+	UrlShowGroups        = "http://localhost" + Port + PathToShowGroups
+	UrlAddDebt           = "http://localhost" + Port + PathToAddDebt
+	UrlAddDebtToGroup    = "http://localhost" + Port + PathToAddDebtToGroup
+	UrlReturnDebt        = "http://localhost" + Port + PathToReturnDebt
+	UrlShowDebts         = "http://localhost" + Port + PathToShowDebts
+	UrlShowLoans         = "http://localhost" + Port + PathToShowLoans
+	UrlShowDebtsToGroups = "http://localhost" + Port + PathToShowDebtsToGroups
+	UrlShowLoansToGroups = "http://localhost" + Port + PathToShowLoansToGroups
 )
 
 type Client struct {
@@ -19,12 +32,13 @@ type Client struct {
 	password string
 }
 
+// # Login or CreateAccount
 func (c *Client) Login() error {
-	req, _ := http.NewRequest("POST", "http://localhost:8080/costSharing/login", nil)
+	req, _ := http.NewRequest("POST", UrlLogin, nil)
 	req.SetBasicAuth(c.username, c.password)
 	res, err := c.Do(req)
 	if err != nil {
-		return errors.New("ops, we couldn't process this") // todo
+		return errors.New("ops, we couldn't process this")
 	}
 
 	if res.StatusCode != 200 {
@@ -34,8 +48,8 @@ func (c *Client) Login() error {
 	return nil
 }
 
-func (c *Client) CreateUser() error {
-	req, _ := http.NewRequest("POST", "http://localhost:8080/costSharing/createAccount", nil)
+func (c *Client) CreateAccount() error {
+	req, _ := http.NewRequest("POST", UrlCreateAccount, nil)
 	req.SetBasicAuth(c.username, c.password)
 	res, err := c.Do(req)
 	if err != nil {
@@ -49,8 +63,9 @@ func (c *Client) CreateUser() error {
 	return nil
 }
 
+// # Users
 func (c *Client) ShowUsers() []string {
-	req, _ := http.NewRequest("GET", "http://localhost:8080/costSharing/home/showUsers", nil)
+	req, _ := http.NewRequest("GET", UrlShowUsers, nil)
 	req.SetBasicAuth(c.username, c.password)
 	res, _ := c.Do(req)
 	var u []string
@@ -59,16 +74,16 @@ func (c *Client) ShowUsers() []string {
 	return u
 }
 
+// # Friends
 func (c *Client) AddFriend(friend string) error {
 	reqBody, err := json.Marshal(map[string]string{
 		"friend": friend,
 	})
 	if err != nil {
-		log.Println(err)
-		return err // TODO
+		return err
 	}
 
-	req, _ := http.NewRequest("POST", "http://localhost:8080/costSharing/home/addFriend", bytes.NewBuffer(reqBody))
+	req, _ := http.NewRequest("POST", UrlAddFriend, bytes.NewBuffer(reqBody))
 	req.Header.Set("Content-type", "application/json")
 	req.SetBasicAuth(c.username, c.password)
 	res, err := c.Do(req)
@@ -82,58 +97,6 @@ func (c *Client) AddFriend(friend string) error {
 		return errors.New(string(b))
 	}
 	return nil
-}
-
-func (c *Client) ShowFriends() []string {
-	req, _ := http.NewRequest("GET", "http://localhost:8080/costSharing/home/showFriends", nil)
-	req.SetBasicAuth(c.username, c.password)
-	res, _ := c.Do(req)
-
-	var u []string
-	body, _ := ioutil.ReadAll(res.Body)
-	_ = json.Unmarshal(body, &u)
-
-	return u
-	//fmt.Println("All friends: ", u)
-}
-
-func (c *Client) CreateGroup(name string, participants []string) error {
-	reqBody, err := json.Marshal(map[string]interface{}{
-		"name":         name,
-		"participants": participants,
-	})
-
-	if err != nil {
-		log.Println(err)
-		return err // TODO
-	}
-
-	req, _ := http.NewRequest("POST", "http://localhost:8080/costSharing/home/createGroup", bytes.NewBuffer(reqBody))
-	req.Header.Set("Content-type", "application/json")
-	req.SetBasicAuth(c.username, c.password)
-	res, err := c.Do(req)
-	if err != nil {
-		log.Println(err)
-		return errors.New("oops, we couldn't process that") // todo
-	}
-
-	if res.StatusCode != http.StatusCreated {
-		b, _ := ioutil.ReadAll(res.Body)
-		return errors.New(string(b))
-	}
-	return nil
-}
-
-func (c *Client) ShowGroups() []string {
-	req, _ := http.NewRequest("GET", "http://localhost:8080/costSharing/home/showGroups", nil)
-	req.SetBasicAuth(c.username, c.password)
-	res, _ := c.Do(req)
-
-	var g []string
-	body, _ := ioutil.ReadAll(res.Body)
-	_ = json.Unmarshal(body, &g)
-
-	return g
 }
 
 func (c *Client) AddDebtToFriend(friend string, amount int, reason string, creditor bool) error {
@@ -144,17 +107,75 @@ func (c *Client) AddDebtToFriend(friend string, amount int, reason string, credi
 		"creditor": creditor,
 	})
 	if err != nil {
-		log.Println(err)
-		return err // TODO
+		return err
 	}
 
-	req, _ := http.NewRequest("POST", "http://localhost:8080/costSharing/home/addDebt ", bytes.NewBuffer(reqBody))
+	req, _ := http.NewRequest("POST", UrlAddDebt, bytes.NewBuffer(reqBody))
 	req.Header.Set("Content-type", "application/json")
 	req.SetBasicAuth(c.username, c.password)
 	res, err := c.Do(req)
 	if err != nil {
-		log.Println(err)
 		return errors.New("oops, we could not process that") // todo
+	}
+
+	if res.StatusCode != http.StatusCreated {
+		b, _ := ioutil.ReadAll(res.Body)
+		return errors.New(string(b))
+	}
+	return nil
+}
+
+func (c *Client) ShowFriends() []string {
+	req, _ := http.NewRequest("GET", UrlShowFriends, nil)
+	req.SetBasicAuth(c.username, c.password)
+	res, _ := c.Do(req)
+
+	var u []string
+	body, _ := ioutil.ReadAll(res.Body)
+	_ = json.Unmarshal(body, &u)
+
+	return u
+}
+
+func (c *Client) ShowDebts() []DebtC {
+	req, _ := http.NewRequest("GET", UrlShowDebts, nil)
+	req.SetBasicAuth(c.username, c.password)
+	res, _ := c.Do(req)
+
+	var owed []DebtC
+	body, _ := ioutil.ReadAll(res.Body)
+	_ = json.Unmarshal(body, &owed)
+	return owed
+}
+
+func (c *Client) ShowLoans() []DebtC {
+	req, _ := http.NewRequest("GET", UrlShowLoans, nil)
+	req.SetBasicAuth(c.username, c.password)
+	res, _ := c.Do(req)
+
+	var lent []DebtC
+	body, _ := ioutil.ReadAll(res.Body)
+	_ = json.Unmarshal(body, &lent)
+	return lent
+}
+
+// # Group
+func (c *Client) CreateGroup(name string, participants []string) error {
+	reqBody, err := json.Marshal(map[string]interface{}{
+		"name":         name,
+		"participants": participants,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	req, _ := http.NewRequest("POST", UrlCreateGroup, bytes.NewBuffer(reqBody))
+	req.Header.Set("Content-type", "application/json")
+	req.SetBasicAuth(c.username, c.password)
+	res, err := c.Do(req)
+	if err != nil {
+		return errors.New("oops, we couldn't process that")
 	}
 
 	if res.StatusCode != http.StatusCreated {
@@ -171,17 +192,15 @@ func (c *Client) AddDebtToGroup(group string, amount int, reason string) error {
 		"reason": reason,
 	})
 	if err != nil {
-		log.Println(err)
-		return err // TODO
+		return err
 	}
 
-	req, _ := http.NewRequest("POST", "http://localhost:8080/costSharing/home/addDebtGroup", bytes.NewBuffer(reqBody))
+	req, _ := http.NewRequest("POST", UrlAddDebtToGroup, bytes.NewBuffer(reqBody))
 	req.Header.Set("Content-type", "application/json")
 	req.SetBasicAuth(c.username, c.password)
 	res, err := c.Do(req)
 	if err != nil {
-		log.Println(err)
-		return errors.New("oops, we couldn't process that") // todo
+		return errors.New("oops, we couldn't process that")
 	}
 
 	if res.StatusCode != http.StatusCreated {
@@ -198,17 +217,15 @@ func (c *Client) ReturnDebt(friend string, amount int, groupName string) error {
 		"groupName": groupName,
 	})
 	if err != nil {
-		log.Println(err)
-		return err // TODO
+		return err
 	}
 
-	req, _ := http.NewRequest("POST", "http://localhost:8080/costSharing/home/returnDebt", bytes.NewBuffer(reqBody))
+	req, _ := http.NewRequest("POST", UrlReturnDebt, bytes.NewBuffer(reqBody))
 	req.Header.Set("Content-type", "application/json")
 	req.SetBasicAuth(c.username, c.password)
 	res, err := c.Do(req)
 	if err != nil {
-		log.Println(err)
-		return errors.New("oops, we couldn't process that") // todo
+		return errors.New("oops, we couldn't process that")
 	}
 
 	if res.StatusCode != http.StatusCreated {
@@ -218,36 +235,20 @@ func (c *Client) ReturnDebt(friend string, amount int, groupName string) error {
 	return nil
 }
 
-type DebtC struct {
-	To     string
-	Amount int
-	Reason string
-}
-
-func (c *Client) ShowOwed() []DebtC {
-	req, _ := http.NewRequest("GET", "http://localhost:8080/costSharing/home/owe", nil)
+func (c *Client) ShowGroups() []string {
+	req, _ := http.NewRequest("GET", UrlShowGroups, nil)
 	req.SetBasicAuth(c.username, c.password)
 	res, _ := c.Do(req)
 
-	var owed []DebtC
+	var g []string
 	body, _ := ioutil.ReadAll(res.Body)
-	_ = json.Unmarshal(body, &owed)
-	return owed
+	_ = json.Unmarshal(body, &g)
+
+	return g
 }
 
-func (c *Client) ShowLent() []DebtC {
-	req, _ := http.NewRequest("GET", "http://localhost:8080/costSharing/home/lend", nil)
-	req.SetBasicAuth(c.username, c.password)
-	res, _ := c.Do(req)
-
-	var lent []DebtC
-	body, _ := ioutil.ReadAll(res.Body)
-	_ = json.Unmarshal(body, &lent)
-	return lent
-}
-
-func (c *Client) ShowOwedGroup() map[string][]DebtC {
-	req, _ := http.NewRequest("GET", "http://localhost:8080/costSharing/home/oweGroup", nil)
+func (c *Client) ShowDebtsToGroups() map[string][]DebtC {
+	req, _ := http.NewRequest("GET", UrlShowDebtsToGroups, nil)
 	req.SetBasicAuth(c.username, c.password)
 	res, _ := c.Do(req)
 
@@ -257,8 +258,8 @@ func (c *Client) ShowOwedGroup() map[string][]DebtC {
 	return owed
 }
 
-func (c *Client) ShowLentGroup() []DebtC {
-	req, _ := http.NewRequest("GET", "http://localhost:8080/costSharing/home/lendGroup", nil)
+func (c *Client) ShowLoansToGroups() []DebtC {
+	req, _ := http.NewRequest("GET", UrlShowLoansToGroups, nil)
 	req.SetBasicAuth(c.username, c.password)
 	res, _ := c.Do(req)
 
@@ -268,19 +269,25 @@ func (c *Client) ShowLentGroup() []DebtC {
 	return lent
 }
 
+type DebtC struct {
+	To     string
+	Amount int
+	Reason string
+}
+
 func main() {
 	var c Client
 	c.username = "p"
 	c.password = "1"
-	c.CreateUser()
+	_ = c.CreateAccount()
 
 	c.username = "o"
 	c.password = "1"
-	c.CreateUser()
+	_ = c.CreateAccount()
 
 	c.username = "r"
 	c.password = "1"
-	c.CreateUser()
+	_ = c.CreateAccount()
 
 	c.Index()
 }
