@@ -28,6 +28,16 @@ func (f *Friends) GetFriendsOf(username string) []string {
 	return friends
 }
 
+func (f *Friends) AreFriends(username1, username2 string) bool {
+	if friends, ok := f.Friends[username1]; ok {
+		if _, ok := friends[username2]; ok {
+			return true
+		}
+		return false
+	}
+	return false
+}
+
 func (f *Friends) becomeFriends(username1, username2 string) error {
 	if _, ok := f.Friends[username1]; !ok { // If 1 doesn't exist in the map
 		f.Friends[username1] = map[string]struct{}{}
