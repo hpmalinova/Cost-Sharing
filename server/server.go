@@ -58,10 +58,10 @@ func Notify(a *App, f http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func (a *App) CreateUser(res http.ResponseWriter, req *http.Request) {
+func (a *App) CreateAccount(res http.ResponseWriter, req *http.Request) {
 	username, password, _ := req.BasicAuth()
 
-	err := a.Users.Create(string(username), password)
+	err := a.Users.Create(username, password)
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusInternalServerError)
 		return
@@ -289,7 +289,7 @@ func (a *App) ReturnDebt(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusCreated)
 }
 
-func (a *App) ShowOwed(res http.ResponseWriter, req *http.Request) {
+func (a *App) ShowDebts(res http.ResponseWriter, req *http.Request) {
 	debtor := req.Header.Get("Username")
 
 	owed := a.Money.GetOwed(debtor) // {to, amount, reason}
@@ -297,7 +297,7 @@ func (a *App) ShowOwed(res http.ResponseWriter, req *http.Request) {
 	_, _ = res.Write(marshal)
 }
 
-func (a *App) ShowLent(res http.ResponseWriter, req *http.Request) {
+func (a *App) ShowLoans(res http.ResponseWriter, req *http.Request) {
 	creditor := req.Header.Get("Username")
 
 	lent := a.Money.GetLent(creditor) // {to, amount, reason}
@@ -305,7 +305,7 @@ func (a *App) ShowLent(res http.ResponseWriter, req *http.Request) {
 	_, _ = res.Write(marshal)
 }
 
-func (a *App) ShowOwedGroup(res http.ResponseWriter, req *http.Request) {
+func (a *App) ShowDebtsToGroups(res http.ResponseWriter, req *http.Request) {
 	debtor := req.Header.Get("Username")
 	groupIDs := a.Participates.GetGroups(debtor)
 
@@ -314,7 +314,7 @@ func (a *App) ShowOwedGroup(res http.ResponseWriter, req *http.Request) {
 	_, _ = res.Write(marshal)
 }
 
-func (a *App) ShowLentGroup(res http.ResponseWriter, req *http.Request) {
+func (a *App) ShowLoansToGroups(res http.ResponseWriter, req *http.Request) {
 	creditor := req.Header.Get("Username")
 	groupIDs := a.Participates.GetGroups(creditor)
 
