@@ -32,15 +32,16 @@ type App struct {
 }
 
 const (
-	peter  = "peter"
-	george = "george"
-	lily   = "lily"
-	maria = "maria"
+	peter     = "peter"
+	peterPass = "5678"
+	george    = "george"
+	lily      = "lily"
+	maria     = "maria"
 )
 
 func InitApp() App {
 	users := storage.Users{Users: map[string]storage.User{}}
-	_ = users.Create(peter, "5678")
+	_ = users.Create(peter, peterPass)
 	_ = users.Create(george, "7890")
 	_ = users.Create(lily, "1234")
 	_ = users.Create(maria, "0000")
@@ -67,10 +68,12 @@ func InitApp() App {
 	}
 }
 
+// Notify works as a middleware. If the given credentials are not valid,
+// returns http.StatusUnauthorized. Else, writes a Header(Key: "Username")
 func Notify(a *App, f http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		username, password, ok := r.BasicAuth()
-		if !ok || !a.CheckPassword(username, password) {
+		if !ok || !a.checkPassword(username, password) {
 			w.WriteHeader(http.StatusUnauthorized)
 		} else {
 			r.Header.Set("Username", username)
@@ -79,6 +82,10 @@ func Notify(a *App, f http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+// # Users
+
+// CreateAccount returns http.StatusBadRequest if a user with the same name already exists
+// and http.StatusCreated if the new user is created successfully
 func (a *App) CreateAccount(res http.ResponseWriter, req *http.Request) {
 	username, password, _ := req.BasicAuth()
 
@@ -91,6 +98,8 @@ func (a *App) CreateAccount(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusCreated)
 }
 
+// Login returns http.StatusUnauthorized if the credentials are not valid
+// and http.StatusOK if they are
 func (a *App) Login(res http.ResponseWriter, req *http.Request) {
 	username, password, _ := req.BasicAuth()
 	err := a.Users.CheckCredentials(username, password)
@@ -99,22 +108,19 @@ func (a *App) Login(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (a *App) CheckPassword(username, password string) bool {
-	realPassword := a.Users.GetPassword(username)
-	return CheckPasswordHash(password, realPassword)
-}
-
-func CheckPasswordHash(password, hash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	return err == nil
-}
-
+// ShowUsers writes to the response.Body:
+// []string that contains all of the usernames in the storage
 func (a *App) ShowUsers(res http.ResponseWriter, req *http.Request) {
 	marshal, _ := json.Marshal(a.Users.GetUsernames())
 	_, _ = res.Write(marshal)
 }
 
 // # Friends
+
+// AddFriend expects map[string]string{"friend": friendName} from the request.
+// If the content type is not "application/json", returns http.StatusUnsupportedMediaType.
+// If the client is already friends with that "friend", returns http.StatusBadRequest.
+// If the request is successful, returns http.StatusCreated
 func (a *App) AddFriend(res http.ResponseWriter, req *http.Request) {
 	headerContentType := req.Header.Get("Content-Type")
 	if headerContentType != "application/json" {
@@ -136,10 +142,65 @@ func (a *App) AddFriend(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusCreated)
 }
 
+// ShowFriends writes to the response.Body
+// []string that contains all of the client friends
 func (a *App) ShowFriends(res http.ResponseWriter, req *http.Request) {
 	username := req.Header.Get("Username")
 	friends := a.Friends.GetFriendsOf(username)
 	marshal, _ := json.Marshal(friends)
+	_, _ = res.Write(marshal)
+}
+
+//
+func (a *App) AddDebtToFriend(res http.ResponseWriter, req *http.Request) {
+	headerContentType := req.Header.Get("Content-Type")
+	if headerContentType != "application/json" {
+		http.Error(res, "Content Type is not application/json", http.StatusUnsupportedMediaType)
+		return
+	}
+
+	username := req.Header.Get("Username")
+	body, _ := ioutil.ReadAll(req.Body)
+
+	var data map[string]interface{}
+	if err := json.Unmarshal(body, &data); err != nil {
+		http.Error(res, "Error in Unmarshal", http.StatusInternalServerError)
+		return
+	}
+
+	friendName := data["friend"].(string)
+	amount := int(data["amount"].(float64)) // todo?
+	reason := data["reason"].(string)
+	creditor := data["creditor"].(bool)
+
+	if !a.Friends.AreFriends(username, friendName) {
+		msg := friendName + " is not your friend!"
+		http.Error(res, msg, http.StatusBadRequest)
+		return
+	}
+
+	if creditor {
+		a.Money.AddDebt(friendName, username, amount, reason)
+	} else {
+		a.Money.AddDebt(username, friendName, amount, reason)
+	}
+
+	res.WriteHeader(http.StatusCreated)
+}
+
+func (a *App) ShowDebts(res http.ResponseWriter, req *http.Request) {
+	debtor := req.Header.Get("Username")
+
+	owed := a.Money.GetOwed(debtor) // {to, amount, reason}
+	marshal, _ := json.Marshal(owed)
+	_, _ = res.Write(marshal)
+}
+
+func (a *App) ShowLoans(res http.ResponseWriter, req *http.Request) {
+	creditor := req.Header.Get("Username")
+
+	lent := a.Money.GetLent(creditor) // {to, amount, reason}
+	marshal, _ := json.Marshal(lent)
 	_, _ = res.Write(marshal)
 }
 
@@ -188,43 +249,6 @@ func (a *App) ShowGroups(res http.ResponseWriter, req *http.Request) {
 
 	marshal, _ := json.Marshal(groupNames)
 	_, _ = res.Write(marshal)
-}
-
-// # Debts
-func (a *App) AddDebtToFriend(res http.ResponseWriter, req *http.Request) {
-	headerContentType := req.Header.Get("Content-Type")
-	if headerContentType != "application/json" {
-		http.Error(res, "Content Type is not application/json", http.StatusUnsupportedMediaType)
-		return
-	}
-
-	username := req.Header.Get("Username")
-	body, _ := ioutil.ReadAll(req.Body)
-
-	var data map[string]interface{}
-	if err := json.Unmarshal(body, &data); err != nil {
-		http.Error(res, "Error in Unmarshal", http.StatusInternalServerError)
-		return
-	}
-
-	friendName := data["friend"].(string)
-	amount := int(data["amount"].(float64)) // todo?
-	reason := data["reason"].(string)
-	creditor := data["creditor"].(bool)
-
-	if !a.Friends.AreFriends(username, friendName) {
-		msg := friendName + " is not your friend!"
-		http.Error(res, msg, http.StatusBadRequest)
-		return
-	}
-
-	if creditor {
-		a.Money.AddDebt(friendName, username, amount, reason)
-	} else {
-		a.Money.AddDebt(username, friendName, amount, reason)
-	}
-
-	res.WriteHeader(http.StatusCreated)
 }
 
 func (a *App) AddDebtToGroup(res http.ResponseWriter, req *http.Request) {
@@ -307,22 +331,6 @@ func (a *App) ReturnDebt(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusCreated)
 }
 
-func (a *App) ShowDebts(res http.ResponseWriter, req *http.Request) {
-	debtor := req.Header.Get("Username")
-
-	owed := a.Money.GetOwed(debtor) // {to, amount, reason}
-	marshal, _ := json.Marshal(owed)
-	_, _ = res.Write(marshal)
-}
-
-func (a *App) ShowLoans(res http.ResponseWriter, req *http.Request) {
-	creditor := req.Header.Get("Username")
-
-	lent := a.Money.GetLent(creditor) // {to, amount, reason}
-	marshal, _ := json.Marshal(lent)
-	_, _ = res.Write(marshal)
-}
-
 func (a *App) ShowDebtsToGroups(res http.ResponseWriter, req *http.Request) {
 	debtor := req.Header.Get("Username")
 	groupIDs := a.Participates.GetGroups(debtor)
@@ -339,4 +347,15 @@ func (a *App) ShowLoansToGroups(res http.ResponseWriter, req *http.Request) {
 	lent := a.Groups.GetLent(creditor, groupIDs)
 	marshal, _ := json.Marshal(lent)
 	_, _ = res.Write(marshal)
+}
+
+// # Utils00
+func (a *App) checkPassword(username, password string) bool {
+	realPassword := a.Users.GetPassword(username)
+	return checkPasswordHash(password, realPassword)
+}
+
+func checkPasswordHash(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
 }

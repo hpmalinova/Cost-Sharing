@@ -24,7 +24,7 @@ func (c *Client) Login() error {
 		return errors.New("ops, we couldn't process this")
 	}
 
-	if res.StatusCode != 200 {
+	if res.StatusCode != http.StatusOK {
 		b, _ := ioutil.ReadAll(res.Body)
 		return errors.New(string(b))
 	}
@@ -52,6 +52,7 @@ func (c *Client) ShowUsers() []string {
 	req, _ := http.NewRequest("GET", UrlShowUsers, nil)
 	req.SetBasicAuth(c.username, c.password)
 	res, _ := c.Do(req)
+
 	var u []string
 	body, _ := ioutil.ReadAll(res.Body)
 	_ = json.Unmarshal(body, &u)

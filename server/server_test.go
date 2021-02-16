@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"sort"
 	"testing"
 )
 
@@ -39,6 +40,58 @@ func TestApp_CreateAccount(t *testing.T) {
 
 		assert.Equal(t, http.StatusBadRequest, response.StatusCode)
 		assert.Equal(t, "this username is already taken\n", string(err))
+	})
+}
+
+func TestApp_Login(t *testing.T) {
+	t.Run("when successful", func(t *testing.T) {
+		request, _ := http.NewRequest("POST", UrlCreateAccount, nil)
+		request.SetBasicAuth(peter, peterPass)
+		recorder := httptest.NewRecorder()
+		app := InitApp()
+
+		app.Login(recorder, request)
+
+		response := recorder.Result()
+		assert.Equal(t, http.StatusOK, response.StatusCode)
+	})
+	t.Run("when wrong credentials", func(t *testing.T) {
+		request, _ := http.NewRequest("POST", UrlCreateAccount, nil)
+		request.SetBasicAuth(peter, password)
+		recorder := httptest.NewRecorder()
+		app := InitApp()
+
+		app.Login(recorder, request)
+
+		response := recorder.Result()
+		err, _ := ioutil.ReadAll(response.Body)
+
+		assert.Equal(t, http.StatusUnauthorized, response.StatusCode)
+		assert.Equal(t, "invalid username or password\n", string(err))
+	})
+}
+
+func TestApp_ShowUsers(t *testing.T) {
+	t.Run("when having users", func(t *testing.T) {
+		request, _ := http.NewRequest("GET", UrlShowUsers, nil)
+		request.Header.Set("Username", peter)
+		recorder := httptest.NewRecorder()
+		app := InitApp()
+
+		app.ShowUsers(recorder, request)
+
+		response := recorder.Result()
+		body, _ := ioutil.ReadAll(response.Body)
+
+		actual := []string{}
+		_ = json.Unmarshal(body, &actual)
+		sort.Strings(actual)
+
+		expected := []string{peter, george, lily, maria}
+		sort.Strings(expected)
+
+		assert.Equal(t, expected, actual)
+		assert.Equal(t, 200, response.StatusCode)
 	})
 }
 
@@ -88,9 +141,10 @@ func TestApp_ShowFriends(t *testing.T) {
 
 		actual := []string{}
 		_ = json.Unmarshal(body, &actual)
+		sort.Strings(actual)
 
 		expected := []string{george, lily}
-		//sort.Strings(expected)
+		sort.Strings(expected)
 
 		assert.Equal(t, expected, actual)
 		assert.Equal(t, 200, response.StatusCode)
@@ -115,3 +169,4 @@ func TestApp_ShowFriends(t *testing.T) {
 		assert.Equal(t, 200, response.StatusCode)
 	})
 }
+
