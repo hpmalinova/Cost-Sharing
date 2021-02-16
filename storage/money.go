@@ -26,11 +26,18 @@ func (m *MoneyExchange) AddUser(username string) {
 func (m *MoneyExchange) AddDebt(debtor, creditor string, amount int, reason string) {
 	// Check if creditor already owes something to debtor
 	if debt, ok := m.Owes[creditor].To[debtor]; ok {
-		if debt.Amount > amount {
-			// Decrease the debt that the creditor has to the debtor (From the past)
-			newAmount := debt.Amount - amount
-			m.Owes[creditor].To[debtor] = Debt{newAmount, debt.Reason}
-			m.Lends[debtor].To[creditor] = Debt{newAmount, debt.Reason}
+		if debt.Amount < amount {
+			// Decrease the amount of the new debt
+			newAmount := amount - debt.Amount
+
+			// Delete the old debt
+			delete(m.Owes[creditor].To, debtor)
+			delete(m.Lends[debtor].To, creditor)
+
+			// Add the new decreased debt
+			m.Owes[debtor].To[creditor] = Debt{newAmount, reason}
+			m.Lends[creditor].To[debtor] = Debt{newAmount, reason}
+
 			return
 		} else if debt.Amount == amount {
 			// Delete the debt, no one owes anything
@@ -39,7 +46,11 @@ func (m *MoneyExchange) AddDebt(debtor, creditor string, amount int, reason stri
 			return
 		} else {
 			// Decrease the debt that the debtor has to the creditor
-			amount -= debt.Amount
+			amount = debt.Amount - amount
+			reason = debt.Reason
+			m.Owes[creditor].To[debtor] = Debt{amount, reason}
+			m.Lends[debtor].To[creditor] = Debt{amount, reason}
+			return
 		}
 	}
 
@@ -87,6 +98,7 @@ func convertToClientData(input To) []DebtC {
 	return output
 }
 
+// DebtC Is Needed to Send the data to the client
 type DebtC struct {
 	To     string
 	Amount int
