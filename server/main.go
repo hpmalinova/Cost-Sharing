@@ -8,7 +8,7 @@ import (
 
 func main() {
 	fmt.Println("Launch server..")
-	app := InitApp()
+	app := InitApp(true)
 
 	// # Create or Login
 	app.Server.Router.HandleFunc(PathToCreateAccount, app.CreateAccount).Methods("POST")

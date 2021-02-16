@@ -37,35 +37,72 @@ const (
 	george    = "george"
 	lily      = "lily"
 	maria     = "maria"
+	juan = "juan"
+	amount    = 20
+	reason    = "food"
+	presents = "presents"
+	japan = "japan"
 )
 
-func InitApp() App {
+func (a *App) InitData(){
 	users := storage.Users{Users: map[string]storage.User{}}
 	_ = users.Create(peter, peterPass)
 	_ = users.Create(george, "7890")
 	_ = users.Create(lily, "1234")
 	_ = users.Create(maria, "0000")
+	_ = users.Create(juan, "8888")
+	a.Users = users
 
 	friends := storage.Friends{Friends: map[string]map[string]struct{}{}}
-	friends.Add(peter, george)
-	friends.Add(peter, lily)
+	_ = friends.Add(peter, george)
+	_ = friends.Add(peter, lily)
+	a.Friends = friends
 
 	moneyExchange := storage.MoneyExchange{Owes: map[string]storage.To{}, Lends: map[string]storage.To{}}
 	moneyExchange.AddUser(peter)
 	moneyExchange.AddUser(george)
 	moneyExchange.AddUser(lily)
-	moneyExchange.AddDebt(peter, george, 20, "food")
-	moneyExchange.AddDebt(lily, peter, 80, "travel")
+	moneyExchange.AddDebt(peter, george, amount, reason)
+	moneyExchange.AddDebt(lily, peter, amount, reason)
+	a.Money = moneyExchange
 
-	return App{
-		Users:        users,
-		Friends:      friends,
-		Money:        moneyExchange,
+	groups := storage.Groups{Groups: map[uuid.UUID]storage.Group{}}
+	p1 := []string{peter, lily}
+	id1 := groups.CreateGroup(presents, p1)
+	groups.AddDebt(peter, id1, p1, amount, reason)
+	p2 := []string{peter, george, maria}
+	id2 := groups.CreateGroup(japan, p2)
+	groups.AddDebt(peter, id2, p2, amount, reason)
+	a.Groups = groups
+
+	participants := storage.Participants{Participants: map[uuid.UUID]map[string]struct{}{}}
+	participants.Add(id1, p1)
+	participants.Add(id2, p2)
+	a.Participants = participants
+
+	participates := storage.Participates{map[string]map[uuid.UUID]struct{}{}}
+	participates.Add(peter, id1)
+	participates.Add(lily, id1)
+	participates.Add(peter, id2)
+	participates.Add(george, id2)
+	participates.Add(maria, id2)
+	a.Participates = participates
+}
+
+func InitApp(withInitData bool) App {
+	a := App{
+		Users:        storage.Users{Users: map[string]storage.User{}},
+		Friends:      storage.Friends{Friends: map[string]map[string]struct{}{}},
+		Money:        storage.MoneyExchange{Owes: map[string]storage.To{}, Lends: map[string]storage.To{}},
 		Groups:       storage.Groups{Groups: map[uuid.UUID]storage.Group{}},
 		Participants: storage.Participants{Participants: map[uuid.UUID]map[string]struct{}{}},
 		Participates: storage.Participates{Participates: map[string]map[uuid.UUID]struct{}{}},
 		Server:       NewServer(),
 	}
+	if withInitData{
+		a.InitData()
+	}
+	return a
 }
 
 // Notify works as a middleware. If the given credentials are not valid,
@@ -151,7 +188,14 @@ func (a *App) ShowFriends(res http.ResponseWriter, req *http.Request) {
 	_, _ = res.Write(marshal)
 }
 
-//
+// AddDebtToFriend receives map[string]interface{} that contains
+// {"friend": string, "amount": int, "reason": string, "creditor":bool},
+// where creditor is True, if the client wants to give money to his friend,
+// and False , if the clients takes money from his friend.
+// If the content type is not "application/json", returns http.StatusUnsupportedMediaType.
+// If there is a problem with the Unmarshal, returns http.StatusInternalServerError
+// If the client and the username are not friends, returns http.StatusBadRequest.
+// If the request is successful, returns http.StatusCreated.
 func (a *App) AddDebtToFriend(res http.ResponseWriter, req *http.Request) {
 	headerContentType := req.Header.Get("Content-Type")
 	if headerContentType != "application/json" {
@@ -169,7 +213,7 @@ func (a *App) AddDebtToFriend(res http.ResponseWriter, req *http.Request) {
 	}
 
 	friendName := data["friend"].(string)
-	amount := int(data["amount"].(float64)) // todo?
+	amount := int(data["amount"].(float64))
 	reason := data["reason"].(string)
 	creditor := data["creditor"].(bool)
 
@@ -188,14 +232,18 @@ func (a *App) AddDebtToFriend(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusCreated)
 }
 
+// ShowDebts writes to the response.Body:
+// DebtC{To,Amount,Reason} for each debt the client has
 func (a *App) ShowDebts(res http.ResponseWriter, req *http.Request) {
 	debtor := req.Header.Get("Username")
 
-	owed := a.Money.GetOwed(debtor) // {to, amount, reason}
+	owed := a.Money.GetOwed(debtor)
 	marshal, _ := json.Marshal(owed)
 	_, _ = res.Write(marshal)
 }
 
+// ShowLoans writes to the response.Body:
+// DebtC{To,Amount,Reason} for each loan the client has given
 func (a *App) ShowLoans(res http.ResponseWriter, req *http.Request) {
 	creditor := req.Header.Get("Username")
 
@@ -204,7 +252,13 @@ func (a *App) ShowLoans(res http.ResponseWriter, req *http.Request) {
 	_, _ = res.Write(marshal)
 }
 
+
 // # Groups
+
+// CreateGroup receives map[string]interface{}{"name": groupName, "participants": []usernames}
+// If the content type is not "application/json", returns http.StatusUnsupportedMediaType.
+// If there is a problem with the Unmarshal, returns http.StatusInternalServerError.
+// If the request is successful, returns http.StatusCreated.
 func (a *App) CreateGroup(res http.ResponseWriter, req *http.Request) {
 	headerContentType := req.Header.Get("Content-Type")
 	if headerContentType != "application/json" {
@@ -241,6 +295,8 @@ func (a *App) CreateGroup(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusCreated)
 }
 
+// ShowGroups writes to the response.Body
+// []string that contains all of the groupNames that the client participates in
 func (a *App) ShowGroups(res http.ResponseWriter, req *http.Request) {
 	username := req.Header.Get("Username")
 
@@ -251,6 +307,12 @@ func (a *App) ShowGroups(res http.ResponseWriter, req *http.Request) {
 	_, _ = res.Write(marshal)
 }
 
+// AddDebtToGroup receives map[string]interface{} with keys: {"group", "amount", "reason"}
+// If the content type is not "application/json", returns http.StatusUnsupportedMediaType.
+// If there is a problem with the Unmarshal, returns http.StatusInternalServerError.
+// If the client does not participate in group with that name, return http.StatusBadRequest.
+// Divides the amount of bebt into equal parts (int of ceil(result)) among all of the participants
+// If the request is successful, returns http.StatusCreated.
 func (a *App) AddDebtToGroup(res http.ResponseWriter, req *http.Request) {
 	headerContentType := req.Header.Get("Content-Type")
 	if headerContentType != "application/json" {
@@ -268,7 +330,7 @@ func (a *App) AddDebtToGroup(res http.ResponseWriter, req *http.Request) {
 	}
 
 	groupName := data["group"].(string)
-	amount := int(data["amount"].(float64)) // todo?
+	amount := int(data["amount"].(float64))
 	reason := data["reason"].(string)
 
 	// Find GroupID of group with name <groupName>
@@ -291,6 +353,7 @@ func (a *App) AddDebtToGroup(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusCreated)
 }
 
+// If there is a problem with the Unmarshal, returns http.StatusInternalServerError
 func (a *App) ReturnDebt(res http.ResponseWriter, req *http.Request) {
 	headerContentType := req.Header.Get("Content-Type")
 	if headerContentType != "application/json" {
@@ -331,6 +394,8 @@ func (a *App) ReturnDebt(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusCreated)
 }
 
+// ShowDebtsToGroups writes to the response.Body:
+// map[groupName][]DebtC{To,Amount,Reason} for each debt the client has to a group
 func (a *App) ShowDebtsToGroups(res http.ResponseWriter, req *http.Request) {
 	debtor := req.Header.Get("Username")
 	groupIDs := a.Participates.GetGroups(debtor)
@@ -340,6 +405,8 @@ func (a *App) ShowDebtsToGroups(res http.ResponseWriter, req *http.Request) {
 	_, _ = res.Write(marshal)
 }
 
+// ShowLoansToGroups writes to the response.Body:
+// map[groupName][]DebtC{To,Amount,Reason} for each loan the client has given to a group
 func (a *App) ShowLoansToGroups(res http.ResponseWriter, req *http.Request) {
 	creditor := req.Header.Get("Username")
 	groupIDs := a.Participates.GetGroups(creditor)
@@ -349,7 +416,7 @@ func (a *App) ShowLoansToGroups(res http.ResponseWriter, req *http.Request) {
 	_, _ = res.Write(marshal)
 }
 
-// # Utils00
+// # Utils
 func (a *App) checkPassword(username, password string) bool {
 	realPassword := a.Users.GetPassword(username)
 	return checkPasswordHash(password, realPassword)
