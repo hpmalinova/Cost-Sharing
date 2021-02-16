@@ -58,11 +58,7 @@ func (m *MoneyExchange) AddDebt(debtor, creditor string, amount int, reason stri
 	if debt, ok := m.Owes[debtor].To[creditor]; ok {
 		// Increase the debt and concatenate the new reason
 		amount += debt.Amount
-		if reason != "" {
-			reason = debt.Reason + ", " + reason
-		} else {
-			reason = debt.Reason
-		}
+		reason = debt.Reason + ", " + reason
 	}
 
 	m.Owes[debtor].To[creditor] = Debt{amount, reason}

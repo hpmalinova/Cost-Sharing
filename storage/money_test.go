@@ -69,7 +69,7 @@ func TestMoneyExchange_GetOwed(t *testing.T) {
 
 func TestMoneyExchange_AddDebt(t *testing.T) {
 	t.Run("test owes when the struct is empty", func(t *testing.T) {
-		m := getMoneyExchange()
+		m := getMoneyExchange(username, username2)
 		m.AddDebt(username, username2, amount, reason)
 
 		expected := []DebtC{{username2, amount, reason}}
@@ -82,7 +82,7 @@ func TestMoneyExchange_AddDebt(t *testing.T) {
 		//assert.Equal(t, expected, m)
 	})
 	t.Run("test lends when the struct is empty", func(t *testing.T) {
-		m := getMoneyExchange()
+		m := getMoneyExchange(username, username2)
 		m.AddDebt(username, username2, amount, reason)
 
 		expected := []DebtC{{username, amount, reason}}
@@ -92,7 +92,7 @@ func TestMoneyExchange_AddDebt(t *testing.T) {
 		assert.Equal(t, expected, actual)
 	})
 	t.Run("when the creditor owes more to the debtor", func(t *testing.T) {
-		m := getMoneyExchange()
+		m := getMoneyExchange(username, username2)
 		// Peter takes 20lv from George(in the past)
 		m.AddDebt(username, username2, amount, reason)
 		// George takes 100lv from Peter (now)
@@ -117,7 +117,7 @@ func TestMoneyExchange_AddDebt(t *testing.T) {
 
 	})
 	t.Run("when the creditor owes the same to the debtor", func(t *testing.T) {
-		m := getMoneyExchange()
+		m := getMoneyExchange(username, username2)
 		// Peter takes 20lv from George (in the past)
 		m.AddDebt(username, username2, amount, reason)
 		// George takes 20lv from Peter (now)
@@ -135,7 +135,7 @@ func TestMoneyExchange_AddDebt(t *testing.T) {
 		assert.Equal(t, expectedEmpty, actualLent2)
 	})
 	t.Run("when the creditor owes less to the debtor", func(t *testing.T) {
-		m := getMoneyExchange()
+		m := getMoneyExchange(username, username2)
 		// Peter takes 100lv from George(in the past)
 		m.AddDebt(username, username2, amount2, reason)
 		// George takes 20lv from Peter (now)
@@ -159,7 +159,7 @@ func TestMoneyExchange_AddDebt(t *testing.T) {
 
 	})
 	t.Run("when the debtor owes more money to the creditor", func(t *testing.T) {
-		m := getMoneyExchange()
+		m := getMoneyExchange(username, username2)
 		// Peter takes 20lv from George(in the past)
 		m.AddDebt(username, username2, amount, reason)
 		// Peter takes 100lv from George (now)
