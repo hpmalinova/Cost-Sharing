@@ -5,25 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
-	"log"
 	"net/http"
-)
-
-const (
-	UrlLogin             = "http://localhost" + Port + PathToLogin
-	UrlCreateAccount     = "http://localhost" + Port + PathToCreateAccount
-	UrlShowUsers         = "http://localhost" + Port + PathToShowUsers
-	UrlAddFriend         = "http://localhost" + Port + PathToAddFriend
-	UrlShowFriends       = "http://localhost" + Port + PathToShowFriends
-	UrlCreateGroup       = "http://localhost" + Port + PathToCreateGroup
-	UrlShowGroups        = "http://localhost" + Port + PathToShowGroups
-	UrlAddDebt           = "http://localhost" + Port + PathToAddDebt
-	UrlAddDebtToGroup    = "http://localhost" + Port + PathToAddDebtToGroup
-	UrlReturnDebt        = "http://localhost" + Port + PathToReturnDebt
-	UrlShowDebts         = "http://localhost" + Port + PathToShowDebts
-	UrlShowLoans         = "http://localhost" + Port + PathToShowLoans
-	UrlShowDebtsToGroups = "http://localhost" + Port + PathToShowDebtsToGroups
-	UrlShowLoansToGroups = "http://localhost" + Port + PathToShowLoansToGroups
 )
 
 type Client struct {
@@ -33,6 +15,7 @@ type Client struct {
 }
 
 // # Login or CreateAccount
+// Login
 func (c *Client) Login() error {
 	req, _ := http.NewRequest("POST", UrlLogin, nil)
 	req.SetBasicAuth(c.username, c.password)
@@ -48,12 +31,13 @@ func (c *Client) Login() error {
 	return nil
 }
 
+// CreateAccount
 func (c *Client) CreateAccount() error {
 	req, _ := http.NewRequest("POST", UrlCreateAccount, nil)
 	req.SetBasicAuth(c.username, c.password)
 	res, err := c.Do(req)
 	if err != nil {
-		return errors.New("oops, we couldn't process that") // todo
+		return errors.New("oops, we couldn't process that")
 	}
 
 	if res.StatusCode != http.StatusCreated {
@@ -88,8 +72,7 @@ func (c *Client) AddFriend(friend string) error {
 	req.SetBasicAuth(c.username, c.password)
 	res, err := c.Do(req)
 	if err != nil {
-		log.Println(err)
-		return errors.New("oops, we couldn't process that") // todo
+		return errors.New("oops, we couldn't process that")
 	}
 
 	if res.StatusCode != http.StatusCreated {
@@ -115,7 +98,7 @@ func (c *Client) AddDebtToFriend(friend string, amount int, reason string, credi
 	req.SetBasicAuth(c.username, c.password)
 	res, err := c.Do(req)
 	if err != nil {
-		return errors.New("oops, we could not process that") // todo
+		return errors.New("oops, we could not process that")
 	}
 
 	if res.StatusCode != http.StatusCreated {
@@ -277,17 +260,5 @@ type DebtC struct {
 
 func main() {
 	var c Client
-	c.username = "p"
-	c.password = "1"
-	_ = c.CreateAccount()
-
-	c.username = "o"
-	c.password = "1"
-	_ = c.CreateAccount()
-
-	c.username = "r"
-	c.password = "1"
-	_ = c.CreateAccount()
-
 	c.Index()
 }

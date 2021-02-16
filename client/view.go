@@ -1,5 +1,7 @@
 package main
 
+// view.go is the connection between the console and the server
+
 import (
 	"bufio"
 	"errors"
@@ -10,6 +12,8 @@ import (
 	"strings"
 )
 
+// Index is the entry point of the client application.
+// The client can choose to create an account or to login into an existing one
 func (c *Client) Index() {
 	fmt.Println("Welcome to Cost-Sharing")
 	for {
@@ -24,8 +28,7 @@ func (c *Client) Index() {
 }
 
 func (c *Client) LoginOrCreate() error {
-	fmt.Println("Do you want to create account or to login?")
-	fmt.Println("Type `login`, `create_account` or `exit`")
+	fmt.Println("Do you want to `create_account` or to `login`?")
 	answer := getUserInput("> ")
 
 	switch answer {
@@ -35,8 +38,6 @@ func (c *Client) LoginOrCreate() error {
 	case "create_account":
 		c.AddCredentials()
 		return c.CreateAccount()
-	case "exit":
-		return nil
 	default:
 		return errors.New("invalid operation, try again")
 	}
@@ -47,6 +48,7 @@ func (c *Client) AddCredentials() {
 	c.password = getUserInput("Password> ")
 }
 
+// Welcome Lets the client choose a command
 func (c *Client) Welcome() {
 	// todo help
 	for {
@@ -75,9 +77,9 @@ func (c *Client) Welcome() {
 			c.showDebts()
 		case "show_loans":
 			c.showLoans()
-		case "owe_group":
+		case "show_debts_to_group":
 			break
-		case "lend_group":
+		case "show_loans_to_group":
 			break
 		case "exit":
 			return
@@ -202,11 +204,13 @@ func (c *Client) showLoans() {
 
 func getUserInput(msg string) string {
 	buf := bufio.NewReader(os.Stdin)
+	input := ""
+	for input == "" {
+		fmt.Print(msg)
+		b, _ := buf.ReadBytes('\n')
+		input = strings.TrimSuffix(string(b), "\n")
+	}
 
-	fmt.Print(msg)
-	b, _ := buf.ReadBytes('\n')
-	input := string(b)
-	input = strings.TrimSuffix(input, "\n")
 	return input
 }
 

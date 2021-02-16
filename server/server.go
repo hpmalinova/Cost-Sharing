@@ -1,4 +1,4 @@
-package server
+package main
 
 import (
 	"Cost-Sharing/storage"
@@ -31,14 +31,35 @@ type App struct {
 	Server       Server
 }
 
+const (
+	peter  = "peter"
+	george = "george"
+	lily   = "lily"
+	maria = "maria"
+)
+
 func InitApp() App {
+	users := storage.Users{Users: map[string]storage.User{}}
+	_ = users.Create(peter, "5678")
+	_ = users.Create(george, "7890")
+	_ = users.Create(lily, "1234")
+	_ = users.Create(maria, "0000")
+
+	friends := storage.Friends{Friends: map[string]map[string]struct{}{}}
+	friends.Add(peter, george)
+	friends.Add(peter, lily)
+
+	moneyExchange := storage.MoneyExchange{Owes: map[string]storage.To{}, Lends: map[string]storage.To{}}
+	moneyExchange.AddUser(peter)
+	moneyExchange.AddUser(george)
+	moneyExchange.AddUser(lily)
+	moneyExchange.AddDebt(peter, george, 20, "food")
+	moneyExchange.AddDebt(lily, peter, 80, "travel")
+
 	return App{
-		Users:   storage.Users{Users: map[string]storage.User{}},
-		Friends: storage.Friends{Friends: map[string]map[string]struct{}{}},
-		Money: storage.MoneyExchange{
-			Owes:  map[string]storage.To{},
-			Lends: map[string]storage.To{},
-		},
+		Users:        users,
+		Friends:      friends,
+		Money:        moneyExchange,
 		Groups:       storage.Groups{Groups: map[uuid.UUID]storage.Group{}},
 		Participants: storage.Participants{Participants: map[uuid.UUID]map[string]struct{}{}},
 		Participates: storage.Participates{Participates: map[string]map[uuid.UUID]struct{}{}},
@@ -52,7 +73,7 @@ func Notify(a *App, f http.HandlerFunc) http.HandlerFunc {
 		if !ok || !a.CheckPassword(username, password) {
 			w.WriteHeader(http.StatusUnauthorized)
 		} else {
-			r.Header.Set("string", username)
+			r.Header.Set("Username", username)
 			f(w, r)
 		}
 	}
@@ -63,7 +84,7 @@ func (a *App) CreateAccount(res http.ResponseWriter, req *http.Request) {
 
 	err := a.Users.Create(username, password)
 	if err != nil {
-		http.Error(res, err.Error(), http.StatusInternalServerError)
+		http.Error(res, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -105,10 +126,7 @@ func (a *App) AddFriend(res http.ResponseWriter, req *http.Request) {
 	body, _ := ioutil.ReadAll(req.Body)
 
 	var data map[string]string
-	if err := json.Unmarshal(body, &data); err != nil {
-		http.Error(res, "Error in Unmarshal", http.StatusInternalServerError)
-		return
-	}
+	_ = json.Unmarshal(body, &data)
 
 	err := a.Friends.Add(username, data["friend"])
 	if err != nil {
@@ -194,8 +212,8 @@ func (a *App) AddDebtToFriend(res http.ResponseWriter, req *http.Request) {
 	reason := data["reason"].(string)
 	creditor := data["creditor"].(bool)
 
-	if !a.Users.DoesExist(friendName) {
-		msg := friendName + " does not exist!"
+	if !a.Friends.AreFriends(username, friendName) {
+		msg := friendName + " is not your friend!"
 		http.Error(res, msg, http.StatusBadRequest)
 		return
 	}

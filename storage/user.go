@@ -23,10 +23,7 @@ func (u *Users) Create(username string, password string) error {
 		return errors.New("this username is already taken")
 	}
 
-	password, err := hashPassword(password)
-	if err != nil {
-		return errors.New("an error has occurred while creating user")
-	}
+	password, _ = hashPassword(password)
 
 	newUser := User{
 		Username: username,
