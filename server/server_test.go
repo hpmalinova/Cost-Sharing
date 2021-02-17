@@ -46,7 +46,7 @@ func TestApp_CreateAccount(t *testing.T) {
 
 func TestApp_Login(t *testing.T) {
 	t.Run("when successful", func(t *testing.T) {
-		request, _ := http.NewRequest("POST", UrlCreateAccount, nil)
+		request, _ := http.NewRequest("POST", UrlLogin, nil)
 		request.SetBasicAuth(peter, peterPass)
 		recorder := httptest.NewRecorder()
 		app := InitApp(true)
@@ -57,7 +57,7 @@ func TestApp_Login(t *testing.T) {
 		assert.Equal(t, http.StatusOK, response.StatusCode)
 	})
 	t.Run("when wrong credentials", func(t *testing.T) {
-		request, _ := http.NewRequest("POST", UrlCreateAccount, nil)
+		request, _ := http.NewRequest("POST", UrlLogin, nil)
 		request.SetBasicAuth(peter, password)
 		recorder := httptest.NewRecorder()
 		app := InitApp(true)
